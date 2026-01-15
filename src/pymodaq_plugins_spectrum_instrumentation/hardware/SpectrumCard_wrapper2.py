@@ -44,7 +44,7 @@ class Digitizer_Wrapper:
 
 
         #num_samples = int(NumSamples * 1e3 /1024 *units.KiS )
-        #samples_per_segment = int(SamplesPerSegment * 1e3 /1024 *units.KiS )
+        # samples_per_segment = int(SamplesPerSegment * 1e3 /1024 *units.KiS )
         #multiple_recording = spcm.Multi(card)
 
         #multiple_recording.memory_size(num_samples)
@@ -52,7 +52,7 @@ class Digitizer_Wrapper:
         #multiple_recording.post_trigger(samples_per_segment // 2)
         multiple_recording.start_buffer_transfer(spcm.M2CMD_DATA_STARTDMA)
 
-
+        print("grab")
 
 
         try:

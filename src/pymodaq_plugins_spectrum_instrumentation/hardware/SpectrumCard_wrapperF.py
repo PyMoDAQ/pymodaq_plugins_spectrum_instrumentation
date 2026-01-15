@@ -26,7 +26,7 @@ class Digitizer_Wrapper:
     #    self.trigger.ch_level0(self.channels[0], 0 * units.mV, return_unit=units.mV)
 
     #def start_a_grab_snap(self, card, channel, Range, postTrigEv):
-    def start_a_grab_snap(self, card, channel, NumSamples, SamplesPerSegment, multiple_recording):
+    def start_a_grab_snap(self, card, channel, NumSamples, data_transfer):
         '''
         # define the data buffer
         self.data_transfer = spcm.DataTransfer(card)
@@ -43,32 +43,24 @@ class Digitizer_Wrapper:
         '''
 
 
-        #num_samples = int(NumSamples * 1e3 /1024 *units.KiS )
-        #samples_per_segment = int(SamplesPerSegment * 1e3 /1024 *units.KiS )
-        #multiple_recording = spcm.Multi(card)
-
-        #multiple_recording.memory_size(num_samples)
-        #multiple_recording.allocate_buffer(samples_per_segment)
-        #multiple_recording.post_trigger(samples_per_segment // 2)
-        multiple_recording.start_buffer_transfer(spcm.M2CMD_DATA_STARTDMA)
+        data_transfer.start_buffer_transfer()
+        data_transfer.verbose(True)
 
 
 
 
         try:
-            card.start(spcm.M2CMD_CARD_ENABLETRIGGER, spcm.M2CMD_DATA_WAITDMA)#, spcm.M2CMD_DATA_WAITDMA, spcm.M2CMD_CARD_WAITTRIGGER)  #or waitdma  #or waitready
+            #card.start(spcm.M2CMD_CARD_ENABLETRIGGER, spcm.M2CMD_DATA_WAITDMA)#, spcm.M2CMD_DATA_WAITDMA, spcm.M2CMD_CARD_WAITTRIGGER)  #or waitdma  #or waitready
+            card.start(spcm.M2CMD_DATA_STARTDMA | spcm.M2CMD_CARD_ENABLETRIGGER)
 
 
-
-            data = multiple_recording.buffer
-            #time_data = multiple_recording.time_data()
 
 
 
             data_V = []
 
 
-            for segment in range(data.shape[0]):
+            for segment in range(data_transfer.shape[0]):
                 #print("Segment {}".format(segment))
                 for chan in channel:
                     chan_data = chan.convert_data(data[segment, :, chan], units.V).magnitude # index definition: [segment, sample, channel]

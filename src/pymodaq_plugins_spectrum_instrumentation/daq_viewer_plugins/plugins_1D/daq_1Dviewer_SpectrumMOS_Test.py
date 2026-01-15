@@ -26,7 +26,7 @@ from ...hardware.SpectrumCard_wrapper2 import Digitizer_Wrapper
 #     for the class name and the file name.)
 # (3) this file should then be put into the right folder, namely IN THE FOLDER OF THE PLUGIN YOU ARE DEVELOPING:
 #     pymodaq_plugins_my_plugin/daq_viewer_plugins/plugins_1D
-class DAQ_1DViewer_SpectrumMOS(DAQ_Viewer_base):
+class DAQ_1DViewer_SpectrumMOS_Test(DAQ_Viewer_base):
     """ Instrument plugin class for a 1D viewer.
 
     This object inherits all functionalities to communicate with PyMoDAQ’s DAQ_Viewer module through inheritance via
@@ -523,8 +523,9 @@ class DAQ_1DViewer_SpectrumMOS(DAQ_Viewer_base):
         #shift = int(samples_per_segment*self.settings.child('lock_in', 'phase').value() )
         #shift = int(samples_per_segment*0.5 )
 
-
-        post  = self.multiple_recording.post_trigger(samples_per_segment - shift)
+        trig = int( samples_per_segment * 0.1 )
+        # post  = self.multiple_recording.post_trigger(samples_per_segment - shift) # ----
+        post  = self.multiple_recording.post_trigger(trig)
         # print(SamplesPerSegment)
         #post = self.multiple_recording.post_trigger( int(SamplesPerSegment * units.S ) )
 
@@ -584,7 +585,9 @@ class DAQ_1DViewer_SpectrumMOS(DAQ_Viewer_base):
 
         try:
             data_tot = self.controller.start_a_grab_snap(self.card, self.channels, NumSamples, SamplesPerSegment, self.multiple_recording)
-        except:
+        except Exception as e:
+            print("Capture Failed !")
+            print(e)
             self.emit_status(ThreadCommand('Update_Status', [
                 'Card asked while running ']))
             self.hit_except = True

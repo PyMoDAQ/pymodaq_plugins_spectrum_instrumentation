@@ -12,7 +12,7 @@ import sys
 import spcm
 from spcm import units
 # from pymodaq_plugins_template2.hardware.SpectrumCard_wrapper import Digitizer_Wrapper
-from ...hardware.SpectrumCard_wrapper2 import Digitizer_Wrapper
+from ...hardware.SpectrumCard_wrapperF import Digitizer_Wrapper
 
 
 # class PythonWrapperOfYourInstrument:
@@ -26,7 +26,7 @@ from ...hardware.SpectrumCard_wrapper2 import Digitizer_Wrapper
 #     for the class name and the file name.)
 # (3) this file should then be put into the right folder, namely IN THE FOLDER OF THE PLUGIN YOU ARE DEVELOPING:
 #     pymodaq_plugins_my_plugin/daq_viewer_plugins/plugins_1D
-class DAQ_1DViewer_SpectrumMOS(DAQ_Viewer_base):
+class DAQ_1DViewer_SpectrumF(DAQ_Viewer_base):
     """ Instrument plugin class for a 1D viewer.
 
     This object inherits all functionalities to communicate with PyMoDAQ’s DAQ_Viewer module through inheritance via
@@ -328,7 +328,7 @@ class DAQ_1DViewer_SpectrumMOS(DAQ_Viewer_base):
             # card = spcm.Card(card_type=spcm.SPCM_TYPE_AI)         # if you want to open the first card of a specific type
 
             # do a simple standard setup
-            self.card.card_mode(spcm.SPC_REC_STD_MULTI)  # single trigger standard mode
+            self.card.card_mode(spcm.SPC_REC_FIFO_SINGLE)  # single trigger standard mode
             self.card.timeout(50 * units.s)  # timeout 50 s
 
 
@@ -507,14 +507,17 @@ class DAQ_1DViewer_SpectrumMOS(DAQ_Viewer_base):
 
 
         NumSamples = self.settings.child('timing', 'NumSamples').value()
+        num_samples = int(NumSamples * 1e3 / 1024 * units.KiS)
+        self.data_transfer = spcm.DataTransfer(self.card)
+        self.data_transfer.allocate_buffer(num_samples)
+        self.data_transfer.pre_trigger(spcm.KIBI(1))
+        self.data_transfer.notify_samples(num_samples)
 
-        SamplesPerSegment = NumSamples #self.settings.child('timing', 'SamplesPerSegment').value()
-        num_samples = int(NumSamples * 1e3 /1024 *units.KiS )
-        samples_per_segment = int(SamplesPerSegment * 1e3 /1024 *units.KiS )
-        self.multiple_recording = spcm.Multi(self.card)
 
-        self.multiple_recording.memory_size(num_samples)
-        self.multiple_recording.allocate_buffer(samples_per_segment)
+
+
+
+
 
         bpn = int(self.settings.child('timing', 'Range').value() * (self.settings.child('lock_in', 'BPulseFreq').value()*2 * 1e-3))
 
@@ -577,7 +580,7 @@ class DAQ_1DViewer_SpectrumMOS(DAQ_Viewer_base):
         SamplesPerSegment = NumSamples  #self.settings.child('timing', 'SamplesPerSegment').value()
 
         try:
-            data_tot = self.controller.start_a_grab_snap(self.card, self.channels, NumSamples, SamplesPerSegment, self.multiple_recording)
+            data_tot = self.controller.start_a_grab_snap(self.card, self.channels, NumSamples, self.data_transfer)
         except:
             self.emit_status(ThreadCommand('Update_Status', [
                 'Card asked while running ']))
