@@ -61,7 +61,7 @@ class DAQ_1DViewer_SpectrumCard(DAQ_Viewer_base):
          'name': 'clockMode',
          'type': 'itemselect',
          'value': dict(all_items=[
-             "internal PLL", "external", "external reference"], selected=["internal PLL"])},
+             "internal PLL", "external", "external reference"], selected=["external reference"])},
 
         {'title': 'Trigger:',
          'name': 'triggerType',
@@ -111,6 +111,11 @@ class DAQ_1DViewer_SpectrumCard(DAQ_Viewer_base):
          'type': 'float',
          'value': 1000, 'default': 1000},
 
+        {'title': 'External reference clock parameters', 'name': 'clock_param', 'type': 'group', 'children':
+            [{'title': 'External ref. clock rate (MHz):', 'name': 'ExtClock', 'type': 'int', 'value': 80, 'default': 80},
+             {'title': 'Clock threshold (V)', 'name': 'clock_th', 'type': 'float', 'value': 1.5, 'default': 1.5}]
+
+         }
     ]
 
 
@@ -132,6 +137,8 @@ class DAQ_1DViewer_SpectrumCard(DAQ_Viewer_base):
 
         self.trigger = None
 
+        self.clock = None
+
     def commit_settings(self, param: Parameter):
         """Apply the consequences of a change of value in the detector settings
 
@@ -150,9 +157,9 @@ class DAQ_1DViewer_SpectrumCard(DAQ_Viewer_base):
                                        self.settings.child('Offset').value())
 
         if param.name() == "sampleRate":
-            clock = spcm.Clock(self.card)
-            clock.mode(spcm.SPC_CM_INTPLL)  # clock mode internal PLL
-            clock.sample_rate(self.settings.child('sampleRate').value() * units.MHz, return_unit=units.MHz)
+            #clock = spcm.Clock(self.card)
+            #clock.mode(spcm.SPC_CM_INTPLL)  # clock mode internal PLL
+            self.clock.sample_rate(self.settings.child('sampleRate').value() * units.MHz, return_unit=units.MHz)
 
 
 
@@ -217,16 +224,26 @@ class DAQ_1DViewer_SpectrumCard(DAQ_Viewer_base):
 
             # do a simple standard setup
             self.card.card_mode(spcm.SPC_REC_STD_SINGLE)  # single trigger standard mode
-            self.card.timeout(5e3 * units.ms)  # timeout 5 s
+            self.card.timeout(5e4 * units.ms)  # timeout 50 s
 
 
             self.trigger = spcm.Trigger(self.card)
 
 
 
-            clock = spcm.Clock(self.card)
-            clock.mode(spcm.SPC_CM_INTPLL)  # clock mode internal PLL
-            clock.sample_rate(self.settings.child('sampleRate').value() * units.MHz, return_unit=units.MHz)
+            self.clock = spcm.Clock(self.card)
+            if self.settings.child('clockMode').value() == "internal PLL":
+                self.clock.mode(spcm.SPC_CM_INTPLL)  # clock mode internal PLL
+            if self.settings.child('clockMode').value() == "external reference":
+                self.clock.mode(spcm.SPC_CM_EXTREFCLOCK)  # external reference clock
+                self.clock.mode(spcm.SPC_REFERENCECLOCK, self.settings.child('clock_param', 'ExtClock').value()*1e6) #80MHz
+
+                self.clock.mode(spcm.SPC_CLOCK_THRESHOLD, self.settings.child('clock_param', 'clock_th').value()* units.V)
+
+
+
+
+            self.clock.sample_rate(self.settings.child('sampleRate').value() * units.MHz, return_unit=units.MHz)
 
             # setup the channels
 
