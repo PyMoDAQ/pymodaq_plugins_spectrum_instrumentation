@@ -9,30 +9,48 @@ import spcm
 from spcm import units  # spcm uses the pint library for unit handling (units is a UnitRegistry object)
 import sys
 
-
+import numpy as np
 
 class Digitizer_Wrapper:
 
     ############## PMD mandatory methods
 
-    def initialise_device(self, duration : int, sample_rate : float, clock_mode : str = "internal PLL", clock_frequency : float = 80, channels_to_activate : list[bool] = [0,0,0,1,0,1,0,0]) -> bool:
+    def __init__(self, duration : int, sample_rate : float):
         """
-        Initializes the spectrum device in Single Mode
+        Initialise class
         Input : 
             - Duration : int [ms]
             - sample_rate : float [MHz]
-            - clock_mode : str ["internal PLL", "external reference"]
+        """
+        self.card = None
+        self.channels = None
+        self.duration = duration
+        self.sample_rate = sample_rate
+    
+
+    def initialise_device(self, clock_mode : str = "internal PLL", clock_frequency : float = 80, channels_to_activate : list[bool] = [0,0,0,1,0,1,0,0], channel_amplitude : int = 5000, channel_offset : int = 0, trigger_settings : dict = {"trigger_type":"None", "trigger_channel":"CH0", "trigger_mode":"Rising Edge", "trigger_level":5000}) -> bool:
+        """
+        Initializes the spectrum device in Single Mode
+        Input :
+            - clock_mode : str ["internal PLL", "external reference", "external"]
             - clock_frequency : float [MHz]
+            - channels_to_activate : list[bool] list of lenght 8 of 0 and 1 depending on the channels to activate
+            - channel_amplitude : int [mV]
+            - channel_offset : int [mV]
+            - trigger_settings : dict with : {"trigger_type", "trigger_channel", "trigger_mode", "trigger_level"}. 
+                - trigger_type = 'None', 'Software trigger', 'External analog trigger'
+                - trigger_channel = 'CH0', 'CH1' ...
+                - trigger_mode = 'Rising Edge', 'Falling Edge', 'Both'
+                - trigger_level [mV]
         """
 
         
-        # Determine Some Properties
-
-        Num_Samples = duration * sample_rate # Total Number of Samples
+        # --- Determine Some Properties
+        Num_Samples = self.duration * self.sample_rate # Total Number of Samples
         print("--- Initializing SPCM Card ---")
-        print("Duration = ", duration, "s")
+        print("Duration = ", self.duration, "s")
         print("Number of Samples = ", Num_Samples)
-        print("Sampling Frequency = ", sample_rate, "MHz")
+        print("Sampling Frequency = ", self.sample_rate, "MHz")
 
         manager = spcm.Card('/dev/spcm0')
         enter = type(manager).__enter__
@@ -42,198 +60,157 @@ class Digitizer_Wrapper:
 
 
         try:
-            card = value
+            self.card = value
 
-            # - Choose Mode
-            card.card_mode(spcm.SPC_REC_STD_SINGLE)  # single trigger standard mode
-            card.timeout(50 * units.s)  # timeout 50 s
+            # --- Choose Mode
+            self.card.card_mode(spcm.SPC_REC_STD_SINGLE)  # single trigger standard mode
+            self.card.timeout(50 * units.s)  # timeout 50 s
 
-            # - Setup External Clock
-            clock = spcm.Clock(card)
+            # --- Setup External Clock
+            clock = spcm.Clock(self.card)
             if clock_mode == "internal PLL":
                 clock.mode(spcm.SPC_CM_INTPLL)  # clock mode internal PLL
-            
-            if clock_mode == "external reference":
+
+            elif clock_mode == "external reference":
                 clock.mode(spcm.SPC_CM_EXTREFCLOCK)  # external reference clock
                 clock.reference_clock(clock_frequency * units.MHz)
+
+            clock.sample_rate(self.sample_rate * units.MHz, return_unit=units.MHz)
 
             # - DO THIS IN DAQ VIEWER
             # # - Check if Given Parameters Work    
             # if int(Num_B_Pulse) != Num_B_Pulse : print("Duration is not an integer amount of Lock-In Pulses !"); exit()
             # if Num_B_Pulse%2 != 0 : print("Not an even amount ou Lock-In Pulses ! Will not be able to calculate Bd"); exit()
 
-            clock.sample_rate(sample_rate * units.MHz, return_unit=units.MHz)
-
-            # Activate Channels
+            # --- Activate Channels
             activated_channels = []
+            activated_str = []
 
             for ii in range(8):
                 if channels_to_activate[ii] == True:
                     activated_str.append('CH'+str(ii))
-                    if ii == 0:
-                        activated_channels.append(spcm.CHANNEL0)
-                    if ii == 1:
-                        activated_channels.append(spcm.CHANNEL1)
-                    if ii == 2:
-                        activated_channels.append(spcm.CHANNEL2)
-                    if ii == 3:
-                        activated_channels.append(spcm.CHANNEL3)
-                    if ii == 4:
-                        activated_channels.append(spcm.CHANNEL4)
-                    if ii == 5:
-                        activated_channels.append(spcm.CHANNEL5)
-                    if ii == 6:
-                        activated_channels.append(spcm.CHANNEL6)
-                    if ii == 7:
-                        activated_channels.append(spcm.CHANNEL7)
-
-
+                    match ii:
+                        case 0: activated_channels.append(spcm.CHANNEL0)
+                        case 1: activated_channels.append(spcm.CHANNEL1)
+                        case 2: activated_channels.append(spcm.CHANNEL2)
+                        case 3: activated_channels.append(spcm.CHANNEL3)
+                        case 4: activated_channels.append(spcm.CHANNEL4)
+                        case 5: activated_channels.append(spcm.CHANNEL5)
+                        case 6: activated_channels.append(spcm.CHANNEL6)
+                        case 7: activated_channels.append(spcm.CHANNEL7)
 
 
             # Can only activate certain number of channels ...
             if len(activated_channels) == 1:
-                channels = spcm.Channels(card, card_enable=activated_channels[0])
+                self.channels = spcm.Channels(self.card, card_enable=activated_channels[0])
             if len(activated_channels) == 2:
-                channels = spcm.Channels(card, card_enable=activated_channels[0] | activated_channels[1])
+                self.channels = spcm.Channels(self.card, card_enable=activated_channels[0] | activated_channels[1])
             if len(activated_channels) == 3:
-                channels = spcm.Channels(card, card_enable=activated_channels[0] | activated_channels[1] | activated_channels[2] | spcm.CHANNEL7)
+                self.channels = spcm.Channels(self.card, card_enable=activated_channels[0] | activated_channels[1] | activated_channels[2] | spcm.CHANNEL7)
             if len(activated_channels) == 4:
-                channels = spcm.Channels(card, card_enable=activated_channels[0] | activated_channels[1] | activated_channels[2] | activated_channels[3])
+                self.channels = spcm.Channels(self.card, card_enable=activated_channels[0] | activated_channels[1] | activated_channels[2] | activated_channels[3])
             if len(activated_channels) == 5:
-                channels = spcm.Channels(card, card_enable=spcm.CHANNEL0 | spcm.CHANNEL1 | spcm.CHANNEL2 | spcm.CHANNEL3 | spcm.CHANNEL4 | spcm.CHANNEL5 | spcm.CHANNEL6 | spcm.CHANNEL7)
-
-
-
+                self.channels = spcm.Channels(self.card, card_enable=activated_channels[0] | activated_channels[1] | activated_channels[2] | activated_channels[3] | activated_channels[4] | activated_channels[5])
 
             # Set Amplitude and Offset
-            channels.amp(Amp * units.mV)
-            channels[0].offset(Offset * units.mV, return_unit=units.mV)
-            channels.termination(0)     # Set termination to 500MOhm ?
+            self.channels.amp(channel_amplitude * units.mV)
+            self.channels[0].offset(channel_offset * units.mV, return_unit=units.mV)
+            self.channels.termination(0)     # Set termination to 500MOhm ?
 
 
-            # - Activate Triggering Channel Triggering
-            trigger = spcm.Trigger(card)
+            # --- Activate Triggering Channel Triggering
+            trigger = spcm.Trigger(self.card)
 
-            if triggerType == ['None']:
+            if trigger_settings["trigger_type"] == 'None':
                 trigger.or_mask(spcm.SPC_TMASK_NONE)  # trigger set to none
-                trigger.ch_or_mask0(channels[0].ch_mask())
-            if triggerType == ['Software trigger']:
+                trigger.ch_or_mask0(self.channels[0].ch_mask())
+            if trigger_settings["trigger_type"] == 'Software trigger':
                 trigger.or_mask(spcm.SPC_TMASK_SOFTWARE)  # trigger set to software
-            if triggerType == ['External analog trigger']:
+            if trigger_settings["trigger_type"] == 'External analog trigger':
                 trigger.or_mask(spcm.SPC_TMASK_EXT0)  # trigger set to external analog
 
-            if triggerType == ['Channel trigger']:
+            if trigger_settings['trigger_type'] == 'Channel trigger':
                 trigger.or_mask(spcm.SPC_TMASK_NONE)
-                if triggerChannel == ['CH0']:
+                if trigger_settings['trigger_channel'] == 'CH0':
                     trigger.ch_or_mask0(spcm.SPC_TMASK0_CH0)
-                if triggerChannel == ['CH1']:
+                if trigger_settings['trigger_channel'] == 'CH1':
                     trigger.ch_or_mask0(spcm.SPC_TMASK0_CH1)
-                if triggerChannel == ['CH2']:
+                if trigger_settings['trigger_channel'] == 'CH2':
                     trigger.ch_or_mask0(spcm.SPC_TMASK0_CH2)
-                if triggerChannel == ['CH3']:
+                if trigger_settings['trigger_channel'] == 'CH3':
                     trigger.ch_or_mask0(spcm.SPC_TMASK0_CH3)
-                if triggerChannel == ['CH4']:
+                if trigger_settings['trigger_channel'] == 'CH4':
                     trigger.ch_or_mask0(spcm.SPC_TMASK0_CH4)
-                if triggerChannel == ['CH5']:
+                if trigger_settings['trigger_channel'] == 'CH5':
                     trigger.ch_or_mask0(spcm.SPC_TMASK0_CH5)
-                if triggerChannel == ['CH6']:
+                if trigger_settings['trigger_channel'] == 'CH6':
                     trigger.ch_or_mask0(spcm.SPC_TMASK0_CH6)
-                if triggerChannel == ['CH7']:
+                if trigger_settings['trigger_channel'] == 'CH7':
                     trigger.ch_or_mask0(spcm.SPC_TMASK0_CH7)
-
-
 
             trigger.and_mask(spcm.SPC_TMASK_NONE)  # no AND mask
 
-            if triggerType == ['Channel trigger']:
-                if triggerMode == ['Rising edge']:
-                    trigger.ch_mode(channels[0], spcm.SPC_TM_POS)
-                if triggerMode == ['Falling edge']:
-                    trigger.ch_mode(channels[0], spcm.SPC_TM_NEG)
-                if triggerMode == ['Both']:
-                    trigger.ch_mode(channels[0], spcm.SPC_TM_BOTH)
+            if trigger_settings['trigger_type'] == ['Channel trigger']:
+                if trigger_settings['trigger_mode'] == ['Rising edge']:
+                    trigger.ch_mode(self.channels[0], spcm.SPC_TM_POS)
+                if trigger_settings['trigger_mode'] == ['Falling edge']:
+                    trigger.ch_mode(self.channels[0], spcm.SPC_TM_NEG)
+                if trigger_settings['trigger_mode'] == ['Both']:
+                    trigger.ch_mode(self.channels[0], spcm.SPC_TM_BOTH)
 
-                trigger.ch_level0(channels[0], trigLevel * units.mV, return_unit=units.mV)
+                trigger.ch_level0(self.channels[0], trigger_settings['trigger_level'] * units.mV, return_unit=units.mV)
 
-            if triggerType == ['External analog trigger']:
-                if triggerMode == ['Rising edge']:
+            if trigger_settings['trigger_type'] == ['External analog trigger']:
+                if trigger_settings['trigger_mode'] == ['Rising edge']:
                     trigger.ext0_mode(spcm.SPC_TM_POS)
-                if triggerMode == ['Falling edge']:
+                if trigger_settings['trigger_mode'] == ['Falling edge']:
                     trigger.ext0_mode(spcm.SPC_TM_NEG)
-                if triggerMode == ['Both']:
+                if trigger_settings['trigger_mode'] == ['Both']:
                     trigger.ext0_mode(spcm.SPC_TM_BOTH)
-                trigger.ext0_level0(trigLevel * units.mV, return_unit=units.mV)
+                trigger.ext0_level0(trigger_settings['trigger_level'] * units.mV, return_unit=units.mV)
 
+
+            initialized = True
 
         except Exception as e:
             hit_except = True
             print("EXIT WITH ERROR : ")
             print(e)
+            initialized = False
 
 
 
-        info = "Initialized"
-        initialized = True
-        return info, initialized
+        return initialized
 
 
 
 
     def get_the_x_axis(self):
-
         return self.data_transfer.time_data().magnitude
 
-    def start_a_grab_snap(self, card, channel, Range, postTrigDur):
+    def grab_trace(self, channel, postTrigDur : float):
 
-        # define the data buffer
-        self.data_transfer = spcm.DataTransfer(card)
-        self.data_transfer.duration(Range * units.us, post_trigger_duration=postTrigDur * units.us)
-        # Start DMA transfer
-        self.data_transfer.start_buffer_transfer(spcm.M2CMD_DATA_STARTDMA)
+        # --- Define the data buffer
+        data_transfer = spcm.DataTransfer(self.card)
+        data_transfer.duration(self.duration * units.ms, post_trigger_duration=postTrigDur*units.ms)
+        
+        # start card and wait until recording is finished
+        self.card.start(spcm.M2CMD_CARD_ENABLETRIGGER, spcm.M2CMD_CARD_WAITREADY)
 
-        # start card
-        card.start(spcm.M2CMD_CARD_ENABLETRIGGER, spcm.M2CMD_DATA_WAITDMA)
+        # Start DMA transfer and wait until the data is transferred
+        data_transfer.start_buffer_transfer(spcm.M2CMD_DATA_STARTDMA, spcm.M2CMD_DATA_WAITDMA)
 
-        data_V = []
-        for chan in channel:
-            data_V.append(chan.convert_data(self.data_transfer.buffer[chan.index, :], units.V).magnitude)
+        # Plot the acquired data
+        time_data_s = data_transfer.time_data()
 
+        all_data = []
+        for channel in self.channels:
+            all_data.append( channel.convert_data(data_transfer.buffer[channel, :], units.V) )
+        all_data = np.array(all_data)
 
-
-
-
-        # def get_data_from_buffer():
-        '''
-
-
-        num_samples = 512 * units.KiS
-        notify_samples = 128 * units.KiS
-        plot_samples = 4 * units.KiS
+        return all_data
 
 
-        data_transfer = spcm.DataTransfer(card)
-        data_transfer.allocate_buffer(num_samples)
-        data_transfer.pre_trigger(spcm.KIBI(1))
-        data_transfer.notify_samples(notify_samples)
-        data_transfer.start_buffer_transfer()
-        data_transfer.verbose(True)
-
-        # start the card
-        card.start(spcm.M2CMD_DATA_STARTDMA | spcm.M2CMD_CARD_ENABLETRIGGER)
-
-        data_V = []
-
-        time_data_s = data_transfer.time_data(total_num_samples=plot_samples)
-        for chan in channel:
-            data_V.append(time_data_s)
-
-        return data_V
-        '''
-
-
-
-
-        return data_V
 
     def terminate_the_communication(self, manager, hit_except):
         try:
@@ -242,10 +219,11 @@ class Digitizer_Wrapper:
         except:
             hit_except = True
             if not exit(manager, *sys.exc_info()):
-
                 raise
         finally:
             if not hit_except:
                 exit(manager)
                 manager.close()
+
+
 
