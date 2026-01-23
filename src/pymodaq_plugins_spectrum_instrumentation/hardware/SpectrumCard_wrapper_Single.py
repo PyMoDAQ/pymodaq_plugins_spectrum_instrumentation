@@ -8,12 +8,9 @@ Created on Tue Jun  4 11:46:01 2024
 import spcm
 from spcm import units  # spcm uses the pint library for unit handling (units is a UnitRegistry object)
 import sys
-
 import numpy as np
 
-class Digitizer_Wrapper:
-
-    ############## PMD mandatory methods
+class Spectrum_Wrapper_Single:
 
     def __init__(self, duration : int, sample_rate : float):
         """
@@ -28,7 +25,7 @@ class Digitizer_Wrapper:
         self.sample_rate = sample_rate
     
 
-    def initialise_device(self, clock_mode : str = "internal PLL", clock_frequency : float = 80, channels_to_activate : list[bool] = [0,0,0,1,0,1,0,0], channel_amplitude : int = 5000, channel_offset : int = 0, trigger_settings : dict = {"trigger_type":"None", "trigger_channel":"CH0", "trigger_mode":"Rising Edge", "trigger_level":5000}) -> bool:
+    def initialise_device(self, clock_mode : str = "external reference", clock_frequency : float = 80, channels_to_activate : list[bool] = [0,0,1,0,1,0,0,0], channel_amplitude : int = 5000, channel_offset : int = 0, trigger_settings : dict = {"trigger_type":"None", "trigger_channel":"CH0", "trigger_mode":"Rising edge", "trigger_level":5000}) -> bool:
         """
         Initializes the spectrum device in Single Mode
         Input :
@@ -48,7 +45,7 @@ class Digitizer_Wrapper:
         # --- Determine Some Properties
         Num_Samples = self.duration * self.sample_rate # Total Number of Samples
         print("--- Initializing SPCM Card ---")
-        print("Duration = ", self.duration, "s")
+        print("Duration = ", self.duration, "ms")
         print("Number of Samples = ", Num_Samples)
         print("Sampling Frequency = ", self.sample_rate, "MHz")
 
@@ -99,24 +96,22 @@ class Digitizer_Wrapper:
                         case 6: activated_channels.append(spcm.CHANNEL6)
                         case 7: activated_channels.append(spcm.CHANNEL7)
 
-
             # Can only activate certain number of channels ...
             if len(activated_channels) == 1:
                 self.channels = spcm.Channels(self.card, card_enable=activated_channels[0])
-            if len(activated_channels) == 2:
+            elif len(activated_channels) == 2:
                 self.channels = spcm.Channels(self.card, card_enable=activated_channels[0] | activated_channels[1])
-            if len(activated_channels) == 3:
+            elif len(activated_channels) == 3:
                 self.channels = spcm.Channels(self.card, card_enable=activated_channels[0] | activated_channels[1] | activated_channels[2] | spcm.CHANNEL7)
-            if len(activated_channels) == 4:
+            elif len(activated_channels) == 4:
                 self.channels = spcm.Channels(self.card, card_enable=activated_channels[0] | activated_channels[1] | activated_channels[2] | activated_channels[3])
-            if len(activated_channels) == 5:
+            elif len(activated_channels) == 5:
                 self.channels = spcm.Channels(self.card, card_enable=activated_channels[0] | activated_channels[1] | activated_channels[2] | activated_channels[3] | activated_channels[4] | activated_channels[5])
 
             # Set Amplitude and Offset
             self.channels.amp(channel_amplitude * units.mV)
             self.channels[0].offset(channel_offset * units.mV, return_unit=units.mV)
             self.channels.termination(0)     # Set termination to 500MOhm ?
-
 
             # --- Activate Triggering Channel Triggering
             trigger = spcm.Trigger(self.card)
@@ -150,22 +145,22 @@ class Digitizer_Wrapper:
 
             trigger.and_mask(spcm.SPC_TMASK_NONE)  # no AND mask
 
-            if trigger_settings['trigger_type'] == ['Channel trigger']:
-                if trigger_settings['trigger_mode'] == ['Rising edge']:
+            if trigger_settings['trigger_type'] == 'Channel trigger':
+                if trigger_settings['trigger_mode'] == 'Rising edge':
                     trigger.ch_mode(self.channels[0], spcm.SPC_TM_POS)
-                if trigger_settings['trigger_mode'] == ['Falling edge']:
+                if trigger_settings['trigger_mode'] == 'Falling edge':
                     trigger.ch_mode(self.channels[0], spcm.SPC_TM_NEG)
-                if trigger_settings['trigger_mode'] == ['Both']:
+                if trigger_settings['trigger_mode'] == 'Both':
                     trigger.ch_mode(self.channels[0], spcm.SPC_TM_BOTH)
 
                 trigger.ch_level0(self.channels[0], trigger_settings['trigger_level'] * units.mV, return_unit=units.mV)
 
-            if trigger_settings['trigger_type'] == ['External analog trigger']:
-                if trigger_settings['trigger_mode'] == ['Rising edge']:
+            if trigger_settings['trigger_type'] == 'External analog trigger':
+                if trigger_settings['trigger_mode'] == 'Rising edge':
                     trigger.ext0_mode(spcm.SPC_TM_POS)
-                if trigger_settings['trigger_mode'] == ['Falling edge']:
+                if trigger_settings['trigger_mode'] == 'Falling edge':
                     trigger.ext0_mode(spcm.SPC_TM_NEG)
-                if trigger_settings['trigger_mode'] == ['Both']:
+                if trigger_settings['trigger_mode'] == 'Both':
                     trigger.ext0_mode(spcm.SPC_TM_BOTH)
                 trigger.ext0_level0(trigger_settings['trigger_level'] * units.mV, return_unit=units.mV)
 
@@ -178,7 +173,7 @@ class Digitizer_Wrapper:
             print(e)
             initialized = False
 
-
+ 
 
         return initialized
 
@@ -188,11 +183,11 @@ class Digitizer_Wrapper:
     def get_the_x_axis(self):
         return self.data_transfer.time_data().magnitude
 
-    def grab_trace(self, channel, postTrigDur : float):
+    def grab_trace(self, post_trig_ms : float = 0):
 
         # --- Define the data buffer
         data_transfer = spcm.DataTransfer(self.card)
-        data_transfer.duration(self.duration * units.ms, post_trigger_duration=postTrigDur*units.ms)
+        data_transfer.duration(self.duration * units.ms, post_trigger_duration=post_trig_ms*units.ms)
         
         # start card and wait until recording is finished
         self.card.start(spcm.M2CMD_CARD_ENABLETRIGGER, spcm.M2CMD_CARD_WAITREADY)
@@ -227,3 +222,22 @@ class Digitizer_Wrapper:
 
 
 
+
+
+
+
+
+
+def main():
+    controller = Spectrum_Wrapper_Single(duration = 50,
+                                         sample_rate= 0.2)
+    
+    init = controller.initialise_device(trigger_settings= {"trigger_type":"External analog trigger", "trigger_channel":"CH0", "trigger_mode":"Rising edge", "trigger_level":5000})
+    data = controller.grab_trace().transpose()
+
+    import matplotlib.pyplot as plt
+    plt.plot(data)
+    plt.show()
+
+if __name__=="__main__":
+    main()
