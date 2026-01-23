@@ -161,6 +161,11 @@ class DAQ_1DViewer_SpectrumMOS_Test(DAQ_Viewer_base):
               'name': 'BG_sub',
               'type': 'bool',
               'value': True, 'default': True},
+             {'title': 'Background wind. size:',
+              'name': 'BG_size',
+              'type': 'itemselect',
+              'value': dict(all_items=[
+                  "0.125", "0.25", "0.5", "0.75"], selected=["0.125"])},
              {'title': 'PD gain:',
               'name': 'Gain',
               'type': 'float',
@@ -523,7 +528,7 @@ class DAQ_1DViewer_SpectrumMOS_Test(DAQ_Viewer_base):
         #shift = int(samples_per_segment*self.settings.child('lock_in', 'phase').value() )
         #shift = int(samples_per_segment*0.5 )
 
-        trig = int( samples_per_segment * 0.1 )
+        trig = int( samples_per_segment * 0)
         # post  = self.multiple_recording.post_trigger(samples_per_segment - shift) # ----
         post  = self.multiple_recording.post_trigger(trig)
         # print(SamplesPerSegment)
