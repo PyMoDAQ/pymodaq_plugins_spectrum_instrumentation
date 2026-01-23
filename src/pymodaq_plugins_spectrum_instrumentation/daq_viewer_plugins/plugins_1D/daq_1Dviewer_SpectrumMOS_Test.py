@@ -173,8 +173,6 @@ class DAQ_1DViewer_SpectrumMOS_Test(DAQ_Viewer_base):
         """ Start a grab from the detector
         """
 
-        NumSamples = self.settings.child('timing', 'NumSamples').value()
-        sampleRate = self.settings.child('timing', 'sampleRate').value()
 
         # --- Grab a Trace
         try:  data_tot = self.controller.grab_trace( post_trig_ms = 5 )     #TODO : Make Post trig variable
@@ -186,204 +184,85 @@ class DAQ_1DViewer_SpectrumMOS_Test(DAQ_Viewer_base):
             self.hit_except = True
 
         print(data_tot.shape)
-        # nbrPts =NumSamples * 1000  #kS to S
 
 
-        if self.settings.child('lock_in', 'diffChannel').value()['selected'] == ['CH4']:
-            ii = self.activated_str.index('CH4')
-            index = len(self.activated_str[:ii])    # Get the index in channel list of difference channel
-            data2reshape = data_tot[index]
-
-        if self.settings.child('lock_in', 'diffChannel').value()['selected'] == ['CH3']:
-            ii = self.activated_str.index('CH3')
-            index = len(self.activated_str[:ii])
-            data2reshape = data_tot[index]
-
-        if self.settings.child('lock_in', 'diffChannel').value()['selected'] == ['CH2']:
-            ii = self.activated_str.index('CH2')
-            index = len(self.activated_str[:ii])
-            data2reshape = data_tot[index]
 
 
-        if self.settings.child('lock_in', 'diffChannel').value()['selected'] == ['CH1']:
-            ii = self.activated_str.index('CH1')
-            index = len(self.activated_str[:ii])
-            data2reshape = data_tot[index]
-        if self.settings.child('lock_in', 'diffChannel').value()['selected'] == ['CH0']:
-            data2reshape = data_tot[0]
+        ii = self.activated_str.index( self.settings.child('lock_in', 'diffChannel').value()['selected'][0] )
+        index = len(self.activated_str[:ii])
+        diff_data = data_tot[index]
+
+        ii = self.activated_str.index( self.settings.child('lock_in', 'sumChannel').value()['selected'][0] )
+        index = len(self.activated_str[:ii])
+        sum_data = data_tot[index]
+
+        # if self.settings.child('lock_in', 'diffChannel').value()['selected'] == ['CH4']:
+        #     ii = self.activated_str.index('CH4')
+        #     index = len(self.activated_str[:ii])    # Get the index in channel list of difference channel
+        #     diff_data = data_tot[index]
+
+        # if self.settings.child('lock_in', 'diffChannel').value()['selected'] == ['CH3']:
+        #     ii = self.activated_str.index('CH3')
+        #     index = len(self.activated_str[:ii])
+        #     diff_data = data_tot[index]
+
+        # if self.settings.child('lock_in', 'diffChannel').value()['selected'] == ['CH2']:
+        #     ii = self.activated_str.index('CH2')
+        #     index = len(self.activated_str[:ii])
+        #     diff_data = data_tot[index]
+
+
+        # if self.settings.child('lock_in', 'diffChannel').value()['selected'] == ['CH1']:
+        #     ii = self.activated_str.index('CH1')
+        #     index = len(self.activated_str[:ii])
+        #     diff_data = data_tot[index]
+        # if self.settings.child('lock_in', 'diffChannel').value()['selected'] == ['CH0']:
+        #     diff_data = data_tot[0]
 
             ##############
 
-        if self.settings.child('lock_in', 'sumChannel').value()['selected'] == ['CH4']:
-            ii = self.activated_str.index('CH4')
-            index = len(self.activated_str[:ii])
-            data_norm = data_tot[index]
+        # if self.settings.child('lock_in', 'sumChannel').value()['selected'] == ['CH4']:
+        #     ii = self.activated_str.index('CH4')
+        #     index = len(self.activated_str[:ii])
+        #     data_norm = data_tot[index]
 
-        if self.settings.child('lock_in', 'sumChannel').value()['selected'] == ['CH3']:
-            ii = self.activated_str.index('CH3')
-            index = len(self.activated_str[:ii])
-            data_norm = data_tot[index]
+        # if self.settings.child('lock_in', 'sumChannel').value()['selected'] == ['CH3']:
+        #     ii = self.activated_str.index('CH3')
+        #     index = len(self.activated_str[:ii])
+        #     data_norm = data_tot[index]
 
-        if self.settings.child('lock_in', 'sumChannel').value()['selected'] == ['CH2']:
-            ii = self.activated_str.index('CH2')
-            index = len(self.activated_str[:ii])
-            data_norm = data_tot[index]
+        # if self.settings.child('lock_in', 'sumChannel').value()['selected'] == ['CH2']:
+        #     ii = self.activated_str.index('CH2')
+        #     index = len(self.activated_str[:ii])
+        #     data_norm = data_tot[index]
 
-        if self.settings.child('lock_in', 'sumChannel').value()['selected'] == ['CH1']:
-            ii = self.activated_str.index('CH1')
-            index = len(self.activated_str[:ii])
-            data_norm = data_tot[index]
+        # if self.settings.child('lock_in', 'sumChannel').value()['selected'] == ['CH1']:
+        #     ii = self.activated_str.index('CH1')
+        #     index = len(self.activated_str[:ii])
+        #     data_norm = data_tot[index]
 
-        if self.settings.child('lock_in', 'sumChannel').value()['selected'] == ['CH0']:
-            data_norm = data_tot[0]
-
-
-
-        try:
-
-            #print('shape = ', np.shape(data2reshape))
-
-            pulseFreq = self.settings.child('timing', 'PulseFreq').value()  #kHz
-            BpulseFreq = self.settings.child('lock_in', 'BPulseFreq').value()*2
-
-            PN = int(self.settings.child('timing', 'Range').value() * pulseFreq )  #ms / kHz = 1
-            #print("PN = ", PN)
-            BPN = int(self.settings.child('timing', 'Range').value() * (BpulseFreq*1e-3))
-
-            PW = int(nbrPts/PN)
-
-            PWb = int(PN/BPN)
-        #Compute IBd, DBd and phi_Bd
+        # if self.settings.child('lock_in', 'sumChannel').value()['selected'] == ['CH0']:
+        #     data_norm = data_tot[0]
 
 
-            ######background subtraction
+        # --- Lock In Process
+        try: sum_data_int, I_a, I_Ba, I_Bd, D_a, D_Ba, D_Bd, diff_data_int, ND_a, ND_Ba, ND_Bd, phi_a, phi_Ba, phi_Bd = self.lock_in(diff_data, sum_data)
 
-
-
-
-
-            data_chan_reshaped = data2reshape.reshape(PN, PW)
-            #print('BPN = ', BPN)
-
-
-            data_norm_reshaped = data_norm.reshape(PN, PW)
-            #if self.settings.child('lock_in', 'operation', 'average').value() == True:
-            #    data_chan_averaged = np.mean(data_chan_reshaped, axis = 1) -
-            #    data_norm_averaged = np.mean(data_norm_reshaped, axis = 1)
-            #    label = 'Averaged'
-            #if self.settings.child('lock_in', 'operation', 'integrate').value() == True:
-
-            if self.settings.child('lock_in', 'BG_sub').value() == True:
-                data_chan_int = -np.sum(data_chan_reshaped[:,:PW//8], axis=1) + np.sum(data_chan_reshaped[:,PW//8:], axis=1)/7
-                data_norm_int = -np.sum(data_norm_reshaped[:,:PW//8], axis=1) + np.sum(data_norm_reshaped[:,PW//8:], axis=1)/7
-            else:
-                data_chan_int = np.sum(data_chan_reshaped, axis=1)
-                data_norm_int = np.sum(data_norm_reshaped, axis=1)
-            #print(PW//4)
-            label = 'Integrated - bg'
-
-
-
-            ##### Computing laser pulse averaging
-
-            D_average = np.mean(data_chan_int)
-            I_average = np.mean(data_norm_int)
-
-            ##### Computing I_Bd
-            data_norm_int_reshaped = data_norm_int.reshape(BPN, PWb)
-            mean_norm_over_B_pulse = np.sum(data_norm_int_reshaped, axis=1)
-            if len(mean_norm_over_B_pulse)%2 !=0 :
-                mean_norm_over_B_pulse = mean_norm_over_B_pulse[:-1]
-            I_Bd =   mean_norm_over_B_pulse [::2] - mean_norm_over_B_pulse [1::2]
-            I_Bd = np.mean(I_Bd)
-
-            ##### Computing I_Ba
-            I_Ba = np.mean(mean_norm_over_B_pulse)
-
-            ##### Computing D_Bd
-            data_diff_int_reshaped = data_chan_int.reshape(BPN, PWb)
-            mean_diff_over_B_pulse = np.mean(data_diff_int_reshaped, axis=1)
-            if len(mean_diff_over_B_pulse)%2 !=0 :
-                mean_diff_over_B_pulse = mean_diff_over_B_pulse[:-1]
-            D_Bd =   mean_diff_over_B_pulse [::2] - mean_diff_over_B_pulse [1::2]
-            D_Bd = np.mean(D_Bd)
-
-            ##### Computing D_Ba
-            D_Ba = np.mean(mean_diff_over_B_pulse)
-
-            #####normailizing
-
-            normalized_D = np.divide(data_chan_int, data_norm_int)*1/(self.settings.child('lock_in', 'Gain').value())/2
-
-            #####computing NDa
-            NDa = np.mean(normalized_D)
-
-            #####computing ND_Bd
-            normalized_DB_reshaped = normalized_D.reshape(BPN, PWb)
-            mean_normalized_DB = np.mean(normalized_DB_reshaped, axis=1)
-            if len(mean_normalized_DB)%2 !=0 :
-                mean_normalized_DB = mean_normalized_DB[:-1]
-            normalized_D_BD = mean_normalized_DB[::2] - mean_normalized_DB[1::2]
-            ND_Bd = np.mean(normalized_D_BD)
-
-            #####computing ND_Ba
-            ND_Ba = np.mean(mean_normalized_DB)
-
-
-            ##### Computing phi_Ba
-            phi_Ba = ND_Ba /  self.settings.child('lock_in', 'Conversion').value()
-            ##### Computing phi_Bd
-            # application of gain and conversion
-
-            phi_Bd = ND_Bd / self.settings.child('lock_in', 'Conversion').value()
-
-
-
-            ##### Computing phi_Ba
-
-            ##### Computing phi_PdBa
-
-            ##### Computing phi_PdBd
-
-            ##### Computing phi_PaBd
-
-
-            ##### Computing phi_PaBa
-
-            #application of gain and conversion
-
-
-
-
-            #data_chan_int *= 1/(self.settings.child('lock_in', 'Gain').value())*self.settings.child('lock_in', 'Conversion').value()
-
-            #pump_off = data_chan_int[::2]
-            #pump_on = data_chan_int[1::2]
-
-            #diff_pump_on_off = pump_on - pump_off
-
-            #Mean_diff = np.mean(diff_pump_on_off)
-
-
-            #self.x_axis = Axis('Time', units='µs', data=data_x, index=0)
-
-            #print('data_chan_averaged = ', data_chan_averaged)
-            #print('status : ', self.card.status())
-        except:
-            self.emit_status(ThreadCommand('Update_Status', [
-                'The nbr of laser pulses is not an integer multiple of the nbr of B pulses ! ']))
+        except Exception as e:
+            self.emit_status(ThreadCommand('Update_Status', [ 'Problem During the LockIn Process ! ! ']))
             self.hit_except = True
-            #if not exit(self.manager):
-            #    raise
+            print(e)
 
+
+
+        data = []
 
         dwa1D1 = DataFromPlugins(name='1. Trace', data=data_tot, dim='Data1D', labels=self.activated_str, do_plot=self.settings.child('lock_in', 'PlotSave', 'showTrace').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'showTrace').value())#, axes=[self.x_axis])
-        #dwa1D2 = DataFromPlugins(name='2. '+label, data=data_chan_int, dim='Data1D', labels=[label+' norm. data', 'Pulse Nbr'], do_plot=False)
 
-        dwatrain = DataFromPlugins(name='2. Pulse train', data=[data_chan_int, data_norm_int], dim='Data1D',
+        dwatrain = DataFromPlugins(name='2. Pulse train', data=[diff_data_int, sum_data_int], dim='Data1D',
                                  labels=['D', 'I'], do_plot=self.settings.child('lock_in', 'PlotSave', 'PulseTrain').value(), do_save=True)
 
-        dwa1D3 = DataFromPlugins(name='3. Pulse average', data=[np.array([D_average]), np.array([I_average])], dim='Data0D',
+        dwa1D3 = DataFromPlugins(name='3. Pulse average', data=[np.array([D_a]), np.array([I_a])], dim='Data0D',
                                  labels=['Da', 'Ia'], do_plot=self.settings.child('lock_in', 'PlotSave', 'PulseAverage').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'PulseAverage').value())
         dwaIBd = DataFromPlugins(name='I_Bd', data=I_Bd, dim='Data0D',
                                  labels=['I_Bd'], do_plot=self.settings.child('lock_in', 'PlotSave', 'I_Bd').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'I_Bd').value())
@@ -431,9 +310,95 @@ class DAQ_1DViewer_SpectrumMOS_Test(DAQ_Viewer_base):
         #########################################################
 
 
-    def update_sampleRate(self):    self.settings.child('Timing', 'sampleRate') = self.settings.child("Timing", "NumSinPulse") / (1/ (self.settings.child("Timing", "pulseFreq") * 1e3) ) * 1e-6   # Points per Pulse / PulsePeriod in MHz
-    def update_NumSamples(self):    self.settings.child('Timing', 'NumSamples') = self.settings.child("Timing", "NumLPulses") * self.settings.child("Timing", "NumSinPulse")    # Num of Pulses * Samples per Pulse
-    def update_Range(self):    self.settings.child('Timing', 'Range') = self.settings.child("Timing", "NumLPulses") / self.settings.child('Timing', 'sampleRate')
+    def lock_in(self, diff_data, sum_data):
+        """
+        From 2 traces, calculate all relevant values
+        """
+        # TODO : All this could be calculated only once
+        NumSamples = self.settings.child('Timing', 'NumSamples').value()
+        sampleRate = self.settings.child('Timing', 'sampleRate').value()
+        pulseFreq = self.settings.child('Timing', 'PulseFreq').value()              # kHz
+        BpulseFreq = self.settings.child('lock_in', 'BPulseFreq').value()*2 *1e-3   # kHz
+
+        nbrPts = NumSamples * 1000  #kS to S
+        
+        num_pulses = self.settings.child('Timing', 'NumLPulses').value()
+        num_LI_period = int( self.settings.child('Timing', 'Range').value() * BpulseFreq)          # LI = Lock In, LI_Period = Up or Down
+
+        points_per_pulse = self.settings.child('Timing', 'NumSinPulse') # Points per pulse
+        pulse_per_LI_Period = int(num_pulses/num_LI_period) # Pulses per Period
+
+
+        print("--- Grab Lock In Info")
+        print(f"Sample Rate = {sampleRate}")
+        print(f"Number of Pulses = {num_pulses}")
+        print(f"Number of LI periods = {num_LI_period}")
+        print(f"Points per pulse = {points_per_pulse}")
+        print(f"Pulse Per LI Period = {pulse_per_LI_Period}")
+        
+
+
+
+        # --- Integrate Pulses and remove Background
+        diff_chan_reshaped = diff_data.reshape(num_pulses, points_per_pulse)
+        data_norm_reshaped = sum_data.reshape(num_pulses, points_per_pulse)
+
+        if self.settings.child('lock_in', 'BG_sub').value() == True:    # TODO : Make background subtraction more smart (especially if trigger not stable, maybe get more background)
+            diff_data_int = -np.sum(diff_chan_reshaped[:,:points_per_pulse//8], axis=1) + np.sum(diff_chan_reshaped[:,points_per_pulse//8:], axis=1)/7
+            sum_data_int = -np.sum(data_norm_reshaped[:,:points_per_pulse//8], axis=1) + np.sum(data_norm_reshaped[:,points_per_pulse//8:], axis=1)/7
+        else:
+            diff_data_int = np.sum(diff_chan_reshaped, axis=1)
+            sum_data_int = np.sum(data_norm_reshaped, axis=1)
+
+        # - Compute I_a and D_a
+
+        D_a = np.mean(diff_data_int)
+        I_a = np.mean(sum_data_int)
+
+
+        # - Compute I_Ba and I_Bd
+        sum_data_int_reshaped = sum_data_int.reshape(num_LI_period, pulse_per_LI_Period)
+        mean_sum_over_B_pulse = np.mean(sum_data_int_reshaped, axis=1)           # TODO : Don't really get what is happening here
+        # Reduce if you cannot divide by 2
+        if len(mean_sum_over_B_pulse)%2 !=0 : mean_sum_over_B_pulse = mean_sum_over_B_pulse[:-1]
+        I_Bd =   mean_sum_over_B_pulse [::2] - mean_sum_over_B_pulse [1::2]
+        I_Bd = np.mean(I_Bd)
+        I_Ba = np.mean(mean_sum_over_B_pulse)
+
+
+        # - Compute D_Ba and D_Bd
+        diff_data_int_reshaped = diff_data_int.reshape(num_LI_period, pulse_per_LI_Period)
+        mean_diff_over_B_pulse = np.mean(diff_data_int_reshaped, axis=1)
+        # Reduce if you cannot divide by 2
+        if len(mean_diff_over_B_pulse)%2 !=0 : mean_diff_over_B_pulse = mean_diff_over_B_pulse[:-1]
+        D_Bd =   mean_diff_over_B_pulse [::2] - mean_diff_over_B_pulse [1::2]
+        D_Bd = np.mean(D_Bd)
+        D_Ba = np.mean(mean_diff_over_B_pulse)
+
+
+        # - Compute ND_Ba and ND_Bd
+        ND_int = np.divide(diff_data_int, sum_data_int) / self.settings.child('lock_in', 'Gain').value() / 2
+        ND_a = np.mean(ND_int)
+
+        ND_reshaped = ND_int.reshape(num_LI_period, pulse_per_LI_Period)
+        mean_ND_over_B_pulse = np.mean(ND_reshaped, axis=1)
+        # Reduce if you cannot divide by 2
+        if len(mean_ND_over_B_pulse)%2 !=0 : mean_ND_over_B_pulse = mean_ND_over_B_pulse[:-1]
+        ND_Bd = mean_ND_over_B_pulse[::2] - mean_ND_over_B_pulse[1::2]
+        ND_Bd = np.mean(ND_Bd)
+        ND_Ba = np.mean(mean_ND_over_B_pulse)
+
+        # - Computing phi_Ba and phi_Bd
+        phi_a = ND_a / self.settings.child('lock_in', 'Conversion').value()
+        phi_Ba = ND_Ba / self.settings.child('lock_in', 'Conversion').value()
+        phi_Bd = ND_Bd / self.settings.child('lock_in', 'Conversion').value()
+
+        return sum_data_int, I_a, I_Ba, I_Bd, diff_data_int, D_a, D_Ba, D_Bd, ND_a, ND_Ba, ND_Bd, phi_a, phi_Ba, phi_Bd
+
+
+    def update_sampleRate(self):    self.settings.child('Timing', 'sampleRate').value() = self.settings.child("Timing", "NumSinPulse").value() / (1/ (self.settings.child("Timing", "pulseFreq").value() * 1e3) ) * 1e-6   # Points per Pulse / PulsePeriod, in MHz
+    def update_NumSamples(self):    self.settings.child('Timing', 'NumSamples').value() = self.settings.child("Timing", "NumLPulses").value() * self.settings.child("Timing", "NumSinPulse").value()    # Num of Pulses * Samples per Pulse
+    def update_Range(self):    self.settings.child('Timing', 'Range').value() = self.settings.child("Timing", "NumLPulses").value() / self.settings.child('Timing', 'sampleRate').value() * 1e3      # NumPulse / sampleRate, in ms
 
 
     def stop(self):
