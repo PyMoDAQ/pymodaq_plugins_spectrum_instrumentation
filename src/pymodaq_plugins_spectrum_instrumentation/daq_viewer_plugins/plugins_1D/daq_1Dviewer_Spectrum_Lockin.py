@@ -175,14 +175,18 @@ class DAQ_1DViewer_Spectrum_Lockin(DAQ_1DViewer_Spectrum):
 
         # --- Integrate Pulses and remove Background
         diff_chan_reshaped = diff_data.reshape(self.num_pulses, self.points_per_pulse)
-        data_norm_reshaped = sum_data.reshape(self.num_pulses, self.points_per_pulse)
+        sum_chan_reshaped = sum_data.reshape(self.num_pulses, self.points_per_pulse)
 
         if self.settings.child('lock_in', 'BG_sub').value() == True:    # TODO : Make background subtraction more smart
-            diff_data_int = -np.sum(diff_chan_reshaped[:,:self.points_per_pulse//8], axis=1) + np.sum(diff_chan_reshaped[:,self.points_per_pulse//8:], axis=1)/7
-            sum_data_int = -np.sum(data_norm_reshaped[:,:self.points_per_pulse//8], axis=1) + np.sum(data_norm_reshaped[:,self.points_per_pulse//8:], axis=1)/7
+            cutoff = int(self.points_per_pulse * self.settings.child("lock_in", "BG_prop").value()/100)
+            diff_data_int = np.sum( diff_chan_reshaped[:,:cutoff], axis=1 ) * (1-self.settings.child('lock_in', 'BG_sub').value()/100) - np.sum(diff_chan_reshaped[:,cutoff:], axis=1) * self.settings.child('lock_in', 'BG_sub').value()/100
+            sum_data_int = np.sum( sum_chan_reshaped[:,:cutoff], axis=1 ) * (1-self.settings.child('lock_in', 'BG_sub').value()/100) - np.sum(sum_chan_reshaped[:,cutoff:], axis=1) * self.settings.child('lock_in', 'BG_sub').value()/100
+
+
+
         else:
             diff_data_int = np.sum(diff_chan_reshaped, axis=1)
-            sum_data_int = np.sum(data_norm_reshaped, axis=1)
+            sum_data_int = np.sum(sum_chan_reshaped, axis=1)
 
         # - Compute I_a and D_a
 
