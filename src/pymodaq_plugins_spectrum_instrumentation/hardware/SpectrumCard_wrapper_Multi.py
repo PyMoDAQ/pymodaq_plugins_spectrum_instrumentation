@@ -10,7 +10,7 @@ from spcm import units  # spcm uses the pint library for unit handling (units is
 import sys
 import numpy as np
 
-class Spectrum_Wrapper_Single:
+class Spectrum_Wrapper_Multi:
 
     def __init__(self, duration : int, sample_rate : float):
         """
@@ -45,7 +45,7 @@ class Spectrum_Wrapper_Single:
         
         # --- Determine Some Properties
         Num_Samples = int( (self.duration*1e-3) * (self.sample_rate*1e6) )                 # Total Number of Samples
-        print("\n--- Initializing SPCM Card --- Mode : Single")
+        print("\n--- Initializing SPCM Card ---")
         print("Duration = ", round(self.duration,5), "ms")
         print("Number of Samples = ", Num_Samples)
         print("Sampling Frequency = ", round(self.sample_rate,5), "MHz")
@@ -74,7 +74,7 @@ class Spectrum_Wrapper_Single:
                 clock.reference_clock(clock_frequency * units.MHz)
 
             else : print("ERROR : Unknown Clock type")
-
+            
             clock.sample_rate(self.sample_rate * units.MHz, return_unit=units.MHz)
 
             # - DO THIS IN DAQ VIEWER

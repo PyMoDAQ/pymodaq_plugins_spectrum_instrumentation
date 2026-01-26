@@ -5,6 +5,7 @@ from pymodaq.control_modules.viewer_utility_classes import DAQ_Viewer_base, como
 from pymodaq.utils.parameter import Parameter
 
 from pymodaq_plugins_spectrum_instrumentation.hardware.SpectrumCard_wrapper_Single import Spectrum_Wrapper_Single
+from pymodaq_plugins_spectrum_instrumentation.hardware.SpectrumCard_wrapper_Multi import Spectrum_Wrapper_Multi
 
 #TODO : Make Post trig variable
 #TODO : Make it possible to change params without rebooting card
@@ -21,6 +22,7 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
         """
 
     params = comon_parameters + [
+        {'title': 'Aquisition Mode', 'name':'DAQ_mode', 'type':'list', 'limits': [ "Single", "Multi WIP", "FIFO WIP" ], "value":"Single" },
 
         {'title': 'Channels:', 'name': 'channels', 'type': 'group', 'children':[
             {'title': 'CH0', 'name': 'c0', 'type': 'led_push', 'value': False, 'default': False},
@@ -34,10 +36,12 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
 
 
         {'title': 'Trigger parameters', 'name': 'trig_params', 'type': 'group', 'children':[
-            {'title': 'Trigger:', 'name': 'triggerType', 'type': 'itemselect', 'value': dict(all_items=[ "None", "Channel trigger", "Software trigger", "External analog trigger"], selected=["External analog trigger"])},
-            {'title': 'Trigger channel:', 'name': 'triggerChannel', 'type': 'itemselect', 'value': dict(all_items=[ "CH0", "CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7"], selected=["CH0"])},
-            {'title': 'Trigger mode', 'name': 'triggerMode', 'type': 'itemselect', 'value': dict(all_items=[ "Rising edge", "Falling edge", "Both"], selected=["Rising edge"])},
-            {'title': 'Trigger level (mV):', 'name': 'triggerLevel', 'type': 'slide', 'value': 100, 'default': 100, 'min': -500, 'max': 500, 'subtype': 'linear'}]},
+            {'title': 'Trigger:', 'name': 'triggerType', 'type':'list', 'limits': [ "None", "Channel trigger", "Software trigger", "External analog trigger" ], "value":"External analog trigger" },
+            {'title': 'Trigger channel:', 'name': 'triggerChannel', 'type':'list', 'limits': ["CH0", "CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7"], "value":"CH0" },
+            {'title': 'Trigger mode', 'name': 'triggerMode', 'type':'list', 'limits': [ "Rising edge", "Falling edge", "Both"], "value":"Rising edge" },
+            {'title': 'Trigger level (mV):', 'name': 'triggerLevel', 'type': 'slide', 'value': 100, 'default': 100, 'min': -500, 'max': 500, 'subtype': 'linear'},
+            {'title': 'Pre-Trig (%):', 'name': 'preTrig', 'type': 'slide', 'value': 10, 'default': 10, 'min': 0, 'max': 100, 'subtype': 'linear'},
+            ]},
 
         {'title': 'timing', 'name': 'timing', 'type': 'group', 'children': [
             {'title': 'Laser pulses freq. (kHz):', 'name': 'PulseFreq', 'type': 'int', 'value': 1, 'default': 1, 'readonly' : True},
@@ -52,7 +56,7 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
         {'title': 'Offset (mV):','name': 'Offset','type': 'float','value': 0, 'default': 0},
 
         {'title': 'External reference clock parameters', 'name': 'clock_param', 'type': 'group', 'children': [
-            {'title': 'Clock mode:', 'name': 'clockMode', 'type': 'itemselect', 'value': dict(all_items=[ "internal PLL", "external", "external reference" ], selected=["external reference"])} ,
+            {'title': 'Clock mode:', 'name': 'clockMode', 'type':'list', 'limits': ["internal PLL", "external", "external reference"], "value":"external reference" },
             {'title': 'External ref. clock rate (MHz):', 'name': 'ExtClock', 'type': 'int', 'value': 80, 'default': 80},
             {'title': 'Clock threshold (V)', 'name': 'clock_th', 'type': 'float', 'value': 1.5, 'default': 1.5},
             ]}
@@ -63,7 +67,16 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
         """ 
         Called at initialisation of the Daq View
         """
-        self.controller: Spectrum_Wrapper_Single = None
+        self.wrapper = None
+        match self.settings.child("DAQ_mode").value():
+            case "Single": 
+                self.wrapper = Spectrum_Wrapper_Single
+                self.controller : Spectrum_Wrapper_Single = None
+            case "Multi":
+                self.wrapper = Spectrum_Wrapper_Multi
+                self.controller : Spectrum_Wrapper_Multi = None
+            case _: print("Error, Wrapper Type Not Defined")
+        
         self.x_axis = None
         self.card = None
         self.manager = None
@@ -107,7 +120,7 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
         """
 
         if self.is_master:
-            self.controller = Spectrum_Wrapper_Single(duration=   self.settings.child("timing", "Range").value(), 
+            self.controller = self.wrapper(duration=   self.settings.child("timing", "Range").value(), 
                                                       sample_rate=   self.settings.child("timing", "sampleRate").value())
 
             initialized = self.controller.initialise_device(clock_mode=             self.settings.child("clock_param", "clockMode").value(),
@@ -141,6 +154,8 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
         """
 
         # --- Grab a Trace
+        # print( self.settings.child("trig_params", "preTrig").value() )
+        # post_trig = self.settings.child("timing", "range")
         try:  data_tot = self.controller.grab_trace( post_trig_ms = 5 )     
         except Exception as e:
             print("Capture Failed !")
