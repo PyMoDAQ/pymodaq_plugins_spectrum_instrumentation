@@ -42,7 +42,7 @@ class DAQ_1DViewer_SpectrumMOS_Test(DAQ_Viewer_base):
             {'title': 'Trigger mode', 'name': 'triggerMode', 'type': 'itemselect', 'value': dict(all_items=[ "Rising edge", "Falling edge", "Both"], selected=["Rising edge"])},
             {'title': 'Trigger level (mV):', 'name': 'triggerLevel', 'type': 'slide', 'value': 100, 'default': 100, 'min': -500, 'max': 500, 'subtype': 'linear'}]},
 
-        {'title': 'Timing', 'name': 'timing', 'type': 'group', 'children': [
+        {'title': 'timing', 'name': 'timing', 'type': 'group', 'children': [
             {'title': 'Laser pulses freq. (kHz):', 'name': 'PulseFreq', 'type': 'int', 'value': 1, 'default': 1, 'readonly' : True},
             {'title': 'Nbr. of laser pulses:', 'name': 'NumLPulses', 'type': 'int', 'value': 200, 'default': 200},
             {'title': 'Nbr. of samples / laser pulse:', 'name': 'NumSinPulse', 'type': 'int', 'value': 200, 'default': 200},
@@ -137,11 +137,11 @@ class DAQ_1DViewer_SpectrumMOS_Test(DAQ_Viewer_base):
         """
 
         if self.is_master:
-            print( self.settings.child('Timing', 'Range').value() )
+            print( self.settings.child('timing', 'Range').value() )
             print( [ self.settings.child("channels", f"c{ii}") for ii in range(8)] )
 
-            self.controller = Spectrum_Wrapper_Single(duration=   self.settings.child("Timing", "Range"), 
-                                                      sample_rate=   self.settings.child("Timing", "sampleRate"))
+            self.controller = Spectrum_Wrapper_Single(duration=   self.settings.child("timing", "Range"), 
+                                                      sample_rate=   self.settings.child("timing", "sampleRate"))
 
             initialized = self.controller.initialise_device(clock_mode=         self.settings["clockMode"],
                                                             clock_frequency=        self.settings.child("clock_param", "ExtClock"),
@@ -254,35 +254,43 @@ class DAQ_1DViewer_SpectrumMOS_Test(DAQ_Viewer_base):
             print(e)
 
 
+        # - Create Pymodaq objects for all
 
-        data = []
+        dwa1D1 = DataFromPlugins(name='Trace', data=data_tot, dim='Data1D', labels=self.activated_str, do_plot=self.settings.child('lock_in', 'PlotSave', 'showTrace').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'showTrace').value())
 
-        dwa1D1 = DataFromPlugins(name='1. Trace', data=data_tot, dim='Data1D', labels=self.activated_str, do_plot=self.settings.child('lock_in', 'PlotSave', 'showTrace').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'showTrace').value())#, axes=[self.x_axis])
-
-        dwatrain = DataFromPlugins(name='2. Pulse train', data=[diff_data_int, sum_data_int], dim='Data1D',
+        dwatrain = DataFromPlugins(name='Pulse train', data=[diff_data_int, sum_data_int], dim='Data1D',
                                  labels=['D', 'I'], do_plot=self.settings.child('lock_in', 'PlotSave', 'PulseTrain').value(), do_save=True)
 
-        dwa1D3 = DataFromPlugins(name='3. Pulse average', data=[np.array([D_a]), np.array([I_a])], dim='Data0D',
+        dwa1D3 = DataFromPlugins(name='Pulse average', data=[np.array([D_a]), np.array([I_a])], dim='Data0D',
                                  labels=['Da', 'Ia'], do_plot=self.settings.child('lock_in', 'PlotSave', 'PulseAverage').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'PulseAverage').value())
+        
         dwaIBd = DataFromPlugins(name='I_Bd', data=I_Bd, dim='Data0D',
                                  labels=['I_Bd'], do_plot=self.settings.child('lock_in', 'PlotSave', 'I_Bd').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'I_Bd').value())
+        
         dwaIBa    = DataFromPlugins(name='I_Ba', data=I_Ba, dim='Data0D',
                                  labels=['I_Ba'], do_plot=self.settings.child('lock_in', 'PlotSave', 'I_Ba').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'I_Ba').value())
-        dwaNDa = DataFromPlugins(name='NDa', data=NDa, dim='Data0D',
+        
+        dwaNDa = DataFromPlugins(name='NDa', data=ND_a, dim='Data0D',
                                  labels=['NDa'], do_plot=self.settings.child('lock_in', 'PlotSave', 'NDa').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'NDa').value())
+        
         dwaDBd = DataFromPlugins(name='D_Bd', data=D_Bd, dim='Data0D',
                                  labels=['D_Bd'], do_plot=self.settings.child('lock_in', 'PlotSave', 'D_Bd').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'D_Bd').value())
+
         dwaDBa    = DataFromPlugins(name='D_Ba', data=D_Ba, dim='Data0D',
                                  labels=['D_Ba'], do_plot=self.settings.child('lock_in', 'PlotSave', 'D_Ba').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'D_Ba').value())
 
         dwaNDBd = DataFromPlugins(name='ND_Bd', data=ND_Bd, dim='Data0D',
                                  labels=['ND_Bd'], do_plot=self.settings.child('lock_in', 'PlotSave', 'ND_Bd').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'ND_Bd').value())
+
         dwaNDBa    = DataFromPlugins(name='ND_Ba', data=ND_Ba, dim='Data0D',
                                  labels=['ND_Ba'], do_plot=self.settings.child('lock_in', 'PlotSave', 'ND_Ba').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'ND_Ba').value())
+
         dwaphi_Bd = DataFromPlugins(name='phi_Bd', data=phi_Bd, dim='Data0D',
                                  labels=['phi_Bd'], do_plot=self.settings.child('lock_in', 'PlotSave', 'phi_Bd').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'phi_Bd').value())
+
         dwaphi_Ba    = DataFromPlugins(name='phi_Ba', data=phi_Ba, dim='Data0D',
                                  labels=['phi_Ba'], do_plot=self.settings.child('lock_in', 'PlotSave', 'phi_Ba').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'phi_Ba').value())
+
 
 
 
@@ -299,15 +307,9 @@ class DAQ_1DViewer_SpectrumMOS_Test(DAQ_Viewer_base):
         data_to_export = [dwatrain, dwa1D3, dwa1D1, dwaIBd, dwaIBa, dwaNDa, dwaDBd,dwaDBa,dwaNDBd, dwaNDBa, dwaphi_Bd, dwaphi_Ba]
 
 
-
-
         data = DataToExport('SPLockIn', data=data_to_export)
         self.dte_signal.emit(data)
 
-
-        ##asynchrone version (non-blocking function with callback)
-        # self.controller.your_method_to_start_a_grab_snap(self.callback)
-        #########################################################
 
 
     def lock_in(self, diff_data, sum_data):
@@ -315,17 +317,17 @@ class DAQ_1DViewer_SpectrumMOS_Test(DAQ_Viewer_base):
         From 2 traces, calculate all relevant values
         """
         # TODO : All this could be calculated only once
-        NumSamples = self.settings.child('Timing', 'NumSamples').value()
-        sampleRate = self.settings.child('Timing', 'sampleRate').value()
-        pulseFreq = self.settings.child('Timing', 'PulseFreq').value()              # kHz
+        NumSamples = self.settings.child('timing', 'NumSamples').value()
+        sampleRate = self.settings.child('timing', 'sampleRate').value()
+        pulseFreq = self.settings.child('timing', 'PulseFreq').value()              # kHz
         BpulseFreq = self.settings.child('lock_in', 'BPulseFreq').value()*2 *1e-3   # kHz
 
         nbrPts = NumSamples * 1000  #kS to S
         
-        num_pulses = self.settings.child('Timing', 'NumLPulses').value()
-        num_LI_period = int( self.settings.child('Timing', 'Range').value() * BpulseFreq)          # LI = Lock In, LI_Period = Up or Down
+        num_pulses = self.settings.child('timing', 'NumLPulses').value()
+        num_LI_period = int( self.settings.child('timing', 'Range').value() * BpulseFreq)          # LI = Lock In, LI_Period = Up or Down
 
-        points_per_pulse = self.settings.child('Timing', 'NumSinPulse') # Points per pulse
+        points_per_pulse = self.settings.child('timing', 'NumSinPulse') # Points per pulse
         pulse_per_LI_Period = int(num_pulses/num_LI_period) # Pulses per Period
 
 
@@ -396,16 +398,15 @@ class DAQ_1DViewer_SpectrumMOS_Test(DAQ_Viewer_base):
         return sum_data_int, I_a, I_Ba, I_Bd, diff_data_int, D_a, D_Ba, D_Bd, ND_a, ND_Ba, ND_Bd, phi_a, phi_Ba, phi_Bd
 
 
-    def update_sampleRate(self):    self.settings.child('Timing', 'sampleRate').value() = self.settings.child("Timing", "NumSinPulse").value() / (1/ (self.settings.child("Timing", "pulseFreq").value() * 1e3) ) * 1e-6   # Points per Pulse / PulsePeriod, in MHz
-    def update_NumSamples(self):    self.settings.child('Timing', 'NumSamples').value() = self.settings.child("Timing", "NumLPulses").value() * self.settings.child("Timing", "NumSinPulse").value()    # Num of Pulses * Samples per Pulse
-    def update_Range(self):    self.settings.child('Timing', 'Range').value() = self.settings.child("Timing", "NumLPulses").value() / self.settings.child('Timing', 'sampleRate').value() * 1e3      # NumPulse / sampleRate, in ms
+    def update_sampleRate(self):    self.settings.child('timing', 'sampleRate').value() = self.settings.child("timing", "NumSinPulse").value() / (1/ (self.settings.child("timing", "pulseFreq").value() * 1e3) ) * 1e-6   # Points per Pulse / PulsePeriod, in MHz
+    def update_NumSamples(self):    self.settings.child('timing', 'NumSamples').value() = self.settings.child("timing", "NumLPulses").value() * self.settings.child("timing", "NumSinPulse").value()    # Num of Pulses * Samples per Pulse
+    def update_Range(self):    self.settings.child('timing', 'Range').value() = self.settings.child("timing", "NumLPulses").value() / self.settings.child('timing', 'sampleRate').value() * 1e3      # NumPulse / sampleRate, in ms
 
 
     def stop(self):
         """Stop the current grab hardware wise if necessary"""
         self.controller.terminate_the_communication()
         return ''
-
 
 
 

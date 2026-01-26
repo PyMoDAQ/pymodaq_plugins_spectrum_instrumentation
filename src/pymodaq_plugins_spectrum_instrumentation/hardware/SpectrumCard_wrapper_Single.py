@@ -23,6 +23,7 @@ class Spectrum_Wrapper_Single:
         self.channels = None
         self.duration = duration
         self.sample_rate = sample_rate
+        self.activated_str = []
     
 
     def initialise_device(self, clock_mode : str = "external reference", clock_frequency : float = 80, channels_to_activate : list[bool] = [0,0,1,0,1,0,0,0], channel_amplitude : int = 5000, channel_offset : int = 0, trigger_settings : dict = {"trigger_type":"None", "trigger_channel":"CH0", "trigger_mode":"Rising edge", "trigger_level":5000}) -> bool:
@@ -43,11 +44,11 @@ class Spectrum_Wrapper_Single:
 
         
         # --- Determine Some Properties
-        Num_Samples = self.duration * self.sample_rate # Total Number of Samples
+        Num_Samples = int( (self.duration*1e-3) * (self.sample_rate*1e6) )                 # Total Number of Samples
         print("--- Initializing SPCM Card ---")
-        print("Duration = ", self.duration, "ms")
+        print("Duration = ", round(self.duration,5), "ms")
         print("Number of Samples = ", Num_Samples)
-        print("Sampling Frequency = ", self.sample_rate, "MHz")
+        print("Sampling Frequency = ", round(self.sample_rate,5), "MHz")
 
         manager = spcm.Card('/dev/spcm0')
         enter = type(manager).__enter__
@@ -81,11 +82,10 @@ class Spectrum_Wrapper_Single:
 
             # --- Activate Channels
             activated_channels = []
-            activated_str = []
 
             for ii in range(8):
                 if channels_to_activate[ii] == True:
-                    activated_str.append('CH'+str(ii))
+                    self.activated_str.append('CH'+str(ii))
                     match ii:
                         case 0: activated_channels.append(spcm.CHANNEL0)
                         case 1: activated_channels.append(spcm.CHANNEL1)
@@ -200,8 +200,7 @@ class Spectrum_Wrapper_Single:
 
         all_data = []
         for channel in self.channels:
-            all_data.append( channel.convert_data(data_transfer.buffer[channel, :], units.V) )
-        all_data = np.array(all_data)
+            all_data.append( np.array(channel.convert_data(data_transfer.buffer[channel, :], units.V)) )
 
         return all_data
 
@@ -226,14 +225,12 @@ class Spectrum_Wrapper_Single:
 
 
 
-
-
 def main():
     controller = Spectrum_Wrapper_Single(duration = 50,
                                          sample_rate= 0.2)
     
     init = controller.initialise_device(trigger_settings= {"trigger_type":"External analog trigger", "trigger_channel":"CH0", "trigger_mode":"Rising edge", "trigger_level":5000})
-    data = controller.grab_trace().transpose()
+    data = np.transpose( controller.grab_trace() )
 
     import matplotlib.pyplot as plt
     plt.plot(data)
