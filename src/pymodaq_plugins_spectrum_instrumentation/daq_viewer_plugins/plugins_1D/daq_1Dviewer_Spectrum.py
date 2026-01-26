@@ -154,9 +154,9 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
         """
 
         # --- Grab a Trace
-        # print( self.settings.child("trig_params", "preTrig").value() )
-        # post_trig = self.settings.child("timing", "range")
-        try:  data_tot = self.controller.grab_trace( post_trig_ms = 5 )     
+        post_trig =  (1-self.settings.child("trig_params", "preTrig").value()/100) * self.settings.child("timing", "Range").value() / self.settings.child("timing", "NumLPulses").value()
+        print(round(post_trig, 5))
+        try:  data_tot = self.controller.grab_trace( post_trig_ms = post_trig )     
         except Exception as e:
             print("Capture Failed !")
             print(e)
