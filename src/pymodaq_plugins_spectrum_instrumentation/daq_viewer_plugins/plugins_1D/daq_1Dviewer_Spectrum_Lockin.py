@@ -7,11 +7,11 @@ import os
 import sys
 
 
-from pymodaq_plugins_spectrum_instrumentation.daq_viewer_plugins.plugins_1D.daq_1Dviewer_Spectrum_Test import DAQ_1DViewer_Spectrum_Test
+from pymodaq_plugins_spectrum_instrumentation.daq_viewer_plugins.plugins_1D.daq_1Dviewer_Spectrum import DAQ_1DViewer_Spectrum
 from pymodaq_plugins_spectrum_instrumentation.hardware.SpectrumCard_wrapper_Single import Spectrum_Wrapper_Single
 
 
-class DAQ_1DViewer_Spectrum_Test_Lockin(DAQ_1DViewer_Spectrum_Test):
+class DAQ_1DViewer_Spectrum_Lockin(DAQ_1DViewer_Spectrum):
     """ Instrument plugin class for a 1D viewer.
 
     Attributes:
@@ -22,14 +22,13 @@ class DAQ_1DViewer_Spectrum_Test_Lockin(DAQ_1DViewer_Spectrum_Test):
 
         """
 
-    params = DAQ_1DViewer_Spectrum_Test.params + [
+    params = DAQ_1DViewer_Spectrum.params + [
 
         {'title': 'Lock-in', 'name': 'lock_in', 'type': 'group', 'children': [
             {'title': 'Difference channel', 'name': 'diffChannel', 'type': 'itemselect', 'value': dict(all_items=["CH0","CH1", "CH2", "CH3", "CH4"], selected=["CH2"])},
             {'title': 'Intensity channel:', 'name': 'sumChannel', 'type': 'itemselect', 'value': dict(all_items=["CH0", "CH1", "CH2", "CH3", "CH4"], selected=["CH4"])},
-            {'title': 'B pulses freq.: (Hz)', 'name': 'BPulseFreq', 'type': 'int', 'value': 500, 'default': 500},
+            {'title': 'Lock In freq.: (Hz)', 'name': 'LI_PulseFreq', 'type': 'int', 'value': 500, 'default': 500},
             {'title': 'Subtract background', 'name': 'BG_sub', 'type': 'bool', 'value': True, 'default': True},
-            {'title': 'Background wind. size:', 'name': 'BG_size', 'type': 'itemselect', 'value': dict(all_items=["0.125", "0.25", "0.5", "0.75"], selected=["0.125"])},
             {'title': 'PD gain:', 'name': 'Gain', 'type': 'float', 'value': 10, 'default': 10, 'readonly': True},
             {'title': 'Conversion factor:', 'name': 'Conversion', 'type': 'float', 'value': 2, 'default': 2, 'readonly': True},
 
@@ -58,9 +57,9 @@ class DAQ_1DViewer_Spectrum_Test_Lockin(DAQ_1DViewer_Spectrum_Test):
         super().__init__(parent, params_state)
 
         # --- Calculate some Lock In Parameters
-        self.BpulseFreq = self.settings.child('lock_in', 'BPulseFreq').value()*2 *1e-3   # kHz
+        self.LI_pulseFreq = self.settings.child('lock_in', 'LI_PulseFreq').value()*2 *1e-3   # kHz
         self.num_pulses = self.settings.child('timing', 'NumLPulses').value()
-        self.num_LI_period = int( self.settings.child('timing', 'Range').value() * self.BpulseFreq)          # LI = Lock In, LI_Period = Up or Down
+        self.num_LI_period = int( self.settings.child('timing', 'Range').value() * self.LI_pulseFreq)          # LI = Lock In, LI_Period = Up or Down
         self.points_per_pulse = self.settings.child('timing', 'NumSinPulse').value() # Points per pulse
         self.pulse_per_LI_Period = int(self.num_pulses/self.num_LI_period) # Pulses per Period
 

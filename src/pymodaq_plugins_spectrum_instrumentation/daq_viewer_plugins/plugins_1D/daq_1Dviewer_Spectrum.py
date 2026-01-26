@@ -9,7 +9,7 @@ from pymodaq_plugins_spectrum_instrumentation.hardware.SpectrumCard_wrapper_Sing
 #TODO : Make Post trig variable
 #TODO : Make it possible to change params without rebooting card
 
-class DAQ_1DViewer_Spectrum_Test(DAQ_Viewer_base):
+class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
     """ Instrument plugin class for a 1D viewer.
 
     Attributes:
