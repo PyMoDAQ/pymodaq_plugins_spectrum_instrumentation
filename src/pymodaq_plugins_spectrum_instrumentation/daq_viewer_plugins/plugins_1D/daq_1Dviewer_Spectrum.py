@@ -32,34 +32,34 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
             {'title': 'CH4', 'name': 'c4', 'type': 'led_push', 'value': True, 'default': True},
             {'title': 'CH5', 'name': 'c5', 'type': 'led_push', 'value': False, 'default': False},
             {'title': 'CH6', 'name': 'c6', 'type': 'led_push', 'value': False, 'default': False},
-            {'title': 'CH7', 'name': 'c7', 'type': 'led_push', 'value': False, 'default': False} ]},
+            {'title': 'CH7', 'name': 'c7', 'type': 'led_push', 'value': False, 'default': False},
+            {'title': 'Amplitude (mV):', 'name': 'Amp', 'type': 'float', 'value': 5000, 'default': 5000},
+            {'title': 'Offset (mV):','name': 'Offset','type': 'float','value': 0, 'default': 0},
+            ], 'expanded': False},
 
+        {'title': 'Timing', 'name': 'timing', 'type': 'group', 'children': [
+            {'title': 'Nbr. of laser pulses:', 'name': 'NumLPulses', 'type': 'int', 'value': 200, 'default': 200},
+            {'title': 'Nbr. of samples per laser pulse:', 'name': 'NumSinPulse', 'type': 'int', 'value': 200, 'default': 200},
+            {'title': 'Sample rate (MHz) (read only) :', 'name': 'sampleRate', 'type': 'float', 'value': 0.2, 'default': 0.2, 'readonly' : True},
+            {'title': 'Number of samples (kS) (read only) :', 'name': 'NumSamples', 'type': 'int', 'value': 40, 'default': 40, 'readonly' : True},
+            {'title': 'Time range (ms) (read only) :', 'name': 'Range', 'type': 'float', 'value': 200, 'default': 200, 'readonly': True},
+            {'title': 'Laser pulses freq. (kHz) (read only) :', 'name': 'PulseFreq', 'type': 'int', 'value': 1, 'default': 1, 'readonly' : True},
+            ]},
 
         {'title': 'Trigger parameters', 'name': 'trig_params', 'type': 'group', 'children':[
             {'title': 'Trigger:', 'name': 'triggerType', 'type':'list', 'limits': [ "None", "Channel trigger", "Software trigger", "External analog trigger" ], "value":"External analog trigger" },
             {'title': 'Trigger channel:', 'name': 'triggerChannel', 'type':'list', 'limits': ["CH0", "CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7"], "value":"CH0" },
             {'title': 'Trigger mode', 'name': 'triggerMode', 'type':'list', 'limits': [ "Rising edge", "Falling edge", "Both"], "value":"Rising edge" },
             {'title': 'Trigger level (mV):', 'name': 'triggerLevel', 'type': 'slide', 'value': 100, 'default': 100, 'min': -500, 'max': 500, 'subtype': 'linear'},
-            {'title': 'Pre-Trig (%):', 'name': 'preTrig', 'type': 'slide', 'value': 10, 'default': 10, 'min': 0, 'max': 100, 'subtype': 'linear'},
+            {'title': 'Pre-Trig (%):', 'name': 'preTrig', 'type': 'slide', 'value': 80, 'default': 80, 'min': 0, 'max': 100, 'subtype': 'linear'},
             ]},
-
-        {'title': 'timing', 'name': 'timing', 'type': 'group', 'children': [
-            {'title': 'Laser pulses freq. (kHz):', 'name': 'PulseFreq', 'type': 'int', 'value': 1, 'default': 1, 'readonly' : True},
-            {'title': 'Nbr. of laser pulses:', 'name': 'NumLPulses', 'type': 'int', 'value': 200, 'default': 200},
-            {'title': 'Nbr. of samples / laser pulse:', 'name': 'NumSinPulse', 'type': 'int', 'value': 200, 'default': 200},
-            {'title': 'Sample rate (MHz):', 'name': 'sampleRate', 'type': 'float', 'value': 0.2, 'default': 0.2, 'readonly' : True},
-            {'title': 'Number of samples (kS):', 'name': 'NumSamples', 'type': 'int', 'value': 40, 'default': 40, 'readonly' : True},
-            {'title': 'Time range (ms):', 'name': 'Range', 'type': 'float', 'value': 200, 'default': 200, 'readonly': True}]},
-
-        {'title': 'Amplitude (mV):', 'name': 'Amp', 'type': 'float', 'value': 5000, 'default': 5000},
-
-        {'title': 'Offset (mV):','name': 'Offset','type': 'float','value': 0, 'default': 0},
 
         {'title': 'External reference clock parameters', 'name': 'clock_param', 'type': 'group', 'children': [
             {'title': 'Clock mode:', 'name': 'clockMode', 'type':'list', 'limits': ["internal PLL", "external", "external reference"], "value":"external reference" },
             {'title': 'External ref. clock rate (MHz):', 'name': 'ExtClock', 'type': 'int', 'value': 80, 'default': 80},
             {'title': 'Clock threshold (V)', 'name': 'clock_th', 'type': 'float', 'value': 1.5, 'default': 1.5},
-            ]}
+            ], 'expanded': False},
+
     ]
 
 
@@ -126,8 +126,8 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
             initialized = self.controller.initialise_device(clock_mode=             self.settings.child("clock_param", "clockMode").value(),
                                                             clock_frequency=        self.settings.child("clock_param", "ExtClock").value(),
                                                             channels_to_activate=   [ self.settings.child("channels", f"c{ii}").value() for ii in range(8)],
-                                                            channel_amplitude=      self.settings["Amp"],
-                                                            channel_offset=         self.settings["Offset"],
+                                                            channel_amplitude=      self.settings.child("channels", "Amp").value(),
+                                                            channel_offset=         self.settings.child("channels", "Offset").value(),
                                                             trigger_settings=       {"trigger_type":    self.settings.child("trig_params", "triggerType").value(),
                                                                                      "trigger_channel": self.settings.child("trig_params", "triggerChannel").value(),
                                                                                      "trigger_mode":    self.settings.child("trig_params", "triggerMode").value(),
@@ -155,7 +155,6 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
 
         # --- Grab a Trace
         post_trig =  (1-self.settings.child("trig_params", "preTrig").value()/100) * self.settings.child("timing", "Range").value() / self.settings.child("timing", "NumLPulses").value()
-        print(round(post_trig, 5))
         try:  data_tot = self.controller.grab_trace( post_trig_ms = post_trig )     
         except Exception as e:
             print("Capture Failed !")

@@ -25,30 +25,31 @@ class DAQ_1DViewer_Spectrum_Lockin(DAQ_1DViewer_Spectrum):
     params = DAQ_1DViewer_Spectrum.params + [
 
         {'title': 'Lock-in', 'name': 'lock_in', 'type': 'group', 'children': [
-            {'title': 'Difference channel', 'name': 'diffChannel', 'type': 'itemselect', 'value': dict(all_items=["CH0","CH1", "CH2", "CH3", "CH4"], selected=["CH2"])},
-            {'title': 'Intensity channel:', 'name': 'sumChannel', 'type': 'itemselect', 'value': dict(all_items=["CH0", "CH1", "CH2", "CH3", "CH4"], selected=["CH4"])},
+            {'title': 'Difference channel', 'name': 'diffChannel', 'type':'list', 'limits': ["CH0", "CH1", "CH2", "CH3", "CH4"], "value":"CH2" },
+            {'title': 'Intensity channel:', 'name': 'sumChannel',  'type':'list', 'limits': ["CH0", "CH1", "CH2", "CH3", "CH4"], "value":"CH4" },
             {'title': 'Lock In freq.: (Hz)', 'name': 'LI_PulseFreq', 'type': 'int', 'value': 500, 'default': 500},
             {'title': 'Subtract background', 'name': 'BG_sub', 'type': 'bool', 'value': True, 'default': True},
-            {'title': 'PD gain:', 'name': 'Gain', 'type': 'float', 'value': 10, 'default': 10, 'readonly': True},
-            {'title': 'Conversion factor:', 'name': 'Conversion', 'type': 'float', 'value': 2, 'default': 2, 'readonly': True},
+            {'title': 'Background Proportion (%)', 'name': 'BG_prop', 'type': 'slide', 'value': 70, 'default': 70, 'min': 0, 'max': 100, 'subtype': 'linear'},
+            {'title': 'PD gain: (read only) ', 'name': 'Gain', 'type': 'float', 'value': 10, 'default': 10, 'readonly': True},
+            {'title': 'Conversion factor: (read only) ', 'name': 'Conversion', 'type': 'float', 'value': 2, 'default': 2, 'readonly': True},
 
             {'title': 'Plotting & Saving', 'name': 'PlotSave', 'type': 'group', 'children': [
                 {'title': 'Show trace', 'name': 'showTrace', 'type': 'bool_push', 'value': False, 'default': False},
                 {'title': 'Pulse train', 'name': 'PulseTrain', 'type': 'led_push', 'value': False, 'default': False},
-                {'title': 'Pulse average', 'name': 'PulseAverage', 'type': 'led_push', 'value': True, 'default': True},
+                {'title': 'Pulse average', 'name': 'PulseAverage', 'type': 'led_push', 'value': False, 'default': False},
                 {'title': 'I_Bd', 'name': 'I_Bd', 'type': 'led_push', 'value': False, 'default': False},
                 {'title': 'I_Ba', 'name': 'I_Ba', 'type': 'led_push', 'value': False, 'default': False},
                 {'title': 'D_Bd', 'name': 'D_Bd', 'type': 'led_push', 'value': False, 'default': False},
                 {'title': 'D_Ba', 'name': 'D_Ba', 'type': 'led_push', 'value': False, 'default': False},
                 {'title': 'NDa', 'name': 'NDa', 'type': 'led_push', 'value': False, 'default': False},
-                {'title': 'ND_Bd', 'name': 'ND_Bd', 'type': 'led_push', 'value': False, 'default': False},
+                {'title': 'ND_Bd', 'name': 'ND_Bd', 'type': 'led_push', 'value': True, 'default': True},
                 {'title': 'ND_Ba', 'name': 'ND_Ba', 'type': 'led_push', 'value': False, 'default': False},
                 {'title': 'phi_Bd', 'name': 'phi_Bd', 'type': 'led_push', 'value': False, 'default': False},
                 {'title': 'phi_Ba', 'name': 'phi_Ba', 'type': 'led_push', 'value': False, 'default': False},
                 {'title': 'phi_Pd', 'name': 'phi_Pd', 'type': 'led_push', 'value': False, 'default': False},
                 {'title': 'phi_Pa', 'name': 'phi_Pa', 'type': 'led_push', 'value': False, 'default': False},
                 {'title': 'Show & save STD', 'name': 'STD', 'type': 'bool', 'value': False, 'default': False}
-                ]}]
+                ], 'expanded': False}]
         },
     ]
 
@@ -79,19 +80,19 @@ class DAQ_1DViewer_Spectrum_Lockin(DAQ_1DViewer_Spectrum):
         """
 
         # --- Grab a Trace
-        try:  data_tot = self.controller.grab_trace( post_trig_ms = 5 )     #TODO : Make Post trig variable
-
+        post_trig =  (1-self.settings.child("trig_params", "preTrig").value()/100) * self.settings.child("timing", "Range").value() / self.settings.child("timing", "NumLPulses").value()
+        try:  data_tot = self.controller.grab_trace( post_trig_ms = post_trig )
         except Exception as e:
             print("Capture Failed !")
             print(e)
             self.emit_status(ThreadCommand('Update_Status', ['Card asked while running ']))
             self.hit_except = True
 
-        ii = self.controller.activated_str.index( self.settings.child('lock_in', 'diffChannel').value()['selected'][0] )
+        ii = self.controller.activated_str.index( self.settings.child('lock_in', 'diffChannel').value() )
         index = len(self.controller.activated_str[:ii])
         diff_data = data_tot[index]
 
-        ii = self.controller.activated_str.index( self.settings.child('lock_in', 'sumChannel').value()['selected'][0] )
+        ii = self.controller.activated_str.index( self.settings.child('lock_in', 'sumChannel').value() )
         index = len(self.controller.activated_str[:ii])
         sum_data = data_tot[index]
 
@@ -176,7 +177,7 @@ class DAQ_1DViewer_Spectrum_Lockin(DAQ_1DViewer_Spectrum):
         diff_chan_reshaped = diff_data.reshape(self.num_pulses, self.points_per_pulse)
         data_norm_reshaped = sum_data.reshape(self.num_pulses, self.points_per_pulse)
 
-        if self.settings.child('lock_in', 'BG_sub').value() == True:    # TODO : Make background subtraction more smart (especially if trigger not stable, maybe get more background)
+        if self.settings.child('lock_in', 'BG_sub').value() == True:    # TODO : Make background subtraction more smart
             diff_data_int = -np.sum(diff_chan_reshaped[:,:self.points_per_pulse//8], axis=1) + np.sum(diff_chan_reshaped[:,self.points_per_pulse//8:], axis=1)/7
             sum_data_int = -np.sum(data_norm_reshaped[:,:self.points_per_pulse//8], axis=1) + np.sum(data_norm_reshaped[:,self.points_per_pulse//8:], axis=1)/7
         else:
@@ -233,40 +234,5 @@ class DAQ_1DViewer_Spectrum_Lockin(DAQ_1DViewer_Spectrum):
 
 
 
-def main(plugin_file=None, init=True, title='Testing'):
-    """
-    this method start a DAQ_Viewer object with this defined plugin as detector
-    Returns
-    -------
-    """
-    import sys
-    from qtpy import QtWidgets
-    from pymodaq.utils.gui_utils import DockArea
-    from pymodaq.control_modules.daq_viewer import DAQ_Viewer
-    from pathlib import Path
-    from pymodaq_gui.utils.utils import mkQApp
-
-    app = mkQApp("PyMoDAQ Viewer")
-
-    win = QtWidgets.QMainWindow()
-    area = DockArea()
-    win.setCentralWidget(area)
-    win.resize(1000, 500)
-    win.setWindowTitle('PyMoDAQ Viewer')
-    if plugin_file is None:
-        detector = 'Spectrum_Test_Lockin'
-        det_type = f'DAQ1D'
-    else:
-        detector = Path(plugin_file).stem[13:]
-        det_type = f'DAQ{Path(plugin_file).stem[4:6].upper()}'
-    prog = DAQ_Viewer(area, title=title)
-    win.show()
-    prog.daq_type = det_type
-    prog.detector = detector
-    if init:
-        prog.init_hardware_ui()
-
-    sys.exit(app.exec_())
-
 if __name__ == "__main__":
-    main()
+    main(__file__)
