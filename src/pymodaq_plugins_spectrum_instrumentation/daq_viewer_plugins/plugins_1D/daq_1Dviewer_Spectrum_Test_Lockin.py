@@ -6,8 +6,6 @@ from pymodaq.utils.parameter import Parameter
 import os
 import sys
 
-import spcm
-from spcm import units
 
 from pymodaq_plugins_spectrum_instrumentation.daq_viewer_plugins.plugins_1D.daq_1Dviewer_Spectrum_Test import DAQ_1DViewer_Spectrum_Test
 from pymodaq_plugins_spectrum_instrumentation.hardware.SpectrumCard_wrapper_Single import Spectrum_Wrapper_Single
@@ -67,7 +65,7 @@ class DAQ_1DViewer_Spectrum_Test_Lockin(DAQ_1DViewer_Spectrum_Test):
         self.pulse_per_LI_Period = int(self.num_pulses/self.num_LI_period) # Pulses per Period
 
 
-        print("--- Lock In Info")
+        print("\n--- Lock In Info")
         print(f"Number of Pulses = {self.num_pulses}")
         print(f"Number of LI periods = {self.num_LI_period}") 
         print(f"Points per pulse = {self.points_per_pulse}")
@@ -170,7 +168,7 @@ class DAQ_1DViewer_Spectrum_Test_Lockin(DAQ_1DViewer_Spectrum_Test):
         From 2 traces, calculate all relevant values
         """
 
-        
+
         # --- Reshape to correct size (TODO: way of avoiding ? Or just expected that num sample != actual num samples )
         diff_data = diff_data[: int(self.num_pulses*self.points_per_pulse) ]
         sum_data = sum_data[: int(self.num_pulses*self.points_per_pulse) ]

@@ -4,10 +4,6 @@ from pymodaq.utils.data import DataFromPlugins, Axis, DataToExport
 from pymodaq.control_modules.viewer_utility_classes import DAQ_Viewer_base, comon_parameters, main
 from pymodaq.utils.parameter import Parameter
 
-
-import spcm
-from spcm import units
-
 from pymodaq_plugins_spectrum_instrumentation.hardware.SpectrumCard_wrapper_Single import Spectrum_Wrapper_Single
 
 #TODO : Make Post trig variable
@@ -175,41 +171,6 @@ class DAQ_1DViewer_Spectrum_Test(DAQ_Viewer_base):
 
 
 
-def main(plugin_file=None, init=True, title='Testing'):
-    """
-    this method start a DAQ_Viewer object with this defined plugin as detector
-    Returns
-    -------
-    """
-    import sys
-    from qtpy import QtWidgets
-    from pymodaq.utils.gui_utils import DockArea
-    from pymodaq.control_modules.daq_viewer import DAQ_Viewer
-    from pathlib import Path
-    from pymodaq_gui.utils.utils import mkQApp
-
-    app = mkQApp("PyMoDAQ Viewer")
-
-    win = QtWidgets.QMainWindow()
-    area = DockArea()
-    win.setCentralWidget(area)
-    win.resize(1000, 500)
-    win.setWindowTitle('PyMoDAQ Viewer')
-    if plugin_file is None:
-        detector = 'Spectrum_Test'
-        det_type = f'DAQ1D'
-    else:
-        detector = Path(plugin_file).stem[13:]
-        det_type = f'DAQ{Path(plugin_file).stem[4:6].upper()}'
-    prog = DAQ_Viewer(area, title=title)
-    win.show()
-    prog.daq_type = det_type
-    prog.detector = detector
-    if init:
-        prog.init_hardware_ui()
-
-    sys.exit(app.exec_())
-
 if __name__ == "__main__":
-    main()
+    main(__file__)
     

@@ -45,7 +45,7 @@ class Spectrum_Wrapper_Single:
         
         # --- Determine Some Properties
         Num_Samples = int( (self.duration*1e-3) * (self.sample_rate*1e6) )                 # Total Number of Samples
-        print("--- Initializing SPCM Card ---")
+        print("\n--- Initializing SPCM Card ---")
         print("Duration = ", round(self.duration,5), "ms")
         print("Number of Samples = ", Num_Samples)
         print("Sampling Frequency = ", round(self.sample_rate,5), "MHz")
@@ -209,15 +209,12 @@ class Spectrum_Wrapper_Single:
     def terminate_the_communication(self, manager, hit_except):
         try:
             print('Communication terminated')
+            self.card.close()
 
         except:
             hit_except = True
             if not exit(manager, *sys.exc_info()):
                 raise
-        finally:
-            if not hit_except:
-                exit(manager)
-                manager.close()
 
 
 
