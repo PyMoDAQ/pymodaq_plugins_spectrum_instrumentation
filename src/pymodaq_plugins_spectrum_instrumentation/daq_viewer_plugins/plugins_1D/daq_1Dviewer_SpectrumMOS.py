@@ -12,7 +12,7 @@ import sys
 import spcm
 from spcm import units
 # from pymodaq_plugins_template2.hardware.SpectrumCard_wrapper import Digitizer_Wrapper
-from ...hardware.SpectrumCard_wrapper2 import Digitizer_Wrapper
+from pymodaq_plugins_spectrum_instrumentation.hardware.SpectrumCard_wrapper2 import Digitizer_Wrapper
 
 
 # class PythonWrapperOfYourInstrument:
@@ -173,9 +173,9 @@ class DAQ_1DViewer_SpectrumMOS(DAQ_Viewer_base):
              {'title': 'Plotting & Saving',
               'name': 'PlotSave',
               'type': 'group', 'children':
-                  [{'title': 'Show trace', 'name': 'showTrace', 'type': 'bool_push', 'value': False, 'default': False},
+                  [{'title': 'Show trace', 'name': 'showTrace', 'type': 'bool_push', 'value': True, 'default': False},
                       {'title': 'Pulse train', 'name': 'PulseTrain', 'type': 'led_push', 'value': False, 'default': False},
-                      {'title': 'Pulse average', 'name': 'PulseAverage', 'type': 'led_push', 'value': True, 'default': True},
+                      {'title': 'Pulse average', 'name': 'PulseAverage', 'type': 'led_push', 'value': False, 'default': False},
                    {'title': 'I_Bd', 'name': 'I_Bd', 'type': 'led_push', 'value': False, 'default': False},
                    {'title': 'I_Ba', 'name': 'I_Ba', 'type': 'led_push', 'value': False, 'default': False},
                    {'title': 'D_Bd', 'name': 'D_Bd', 'type': 'led_push', 'value': False, 'default': False},
@@ -857,3 +857,7 @@ class DAQ_1DViewer_SpectrumMOS(DAQ_Viewer_base):
         self.emit_status(ThreadCommand('Update_Status', ['Some info you want to log']))
         ##############################
         return ''
+
+
+if __name__=="__main__":
+    main(__file__)

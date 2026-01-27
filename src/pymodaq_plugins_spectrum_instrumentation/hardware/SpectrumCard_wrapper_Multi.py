@@ -7,12 +7,13 @@ Created on Tue Jun  4 11:46:01 2024
 
 import spcm
 from spcm import units  # spcm uses the pint library for unit handling (units is a UnitRegistry object)
+from spcm.classes_unit_conversion import UnitConversion
 import sys
 import numpy as np
 
 class Spectrum_Wrapper_Multi:
 
-    def __init__(self, duration : int, sample_rate : float):
+    def __init__(self, duration : float, sample_rate : float):
         """
         Initialise class
         Input : 
@@ -24,6 +25,7 @@ class Spectrum_Wrapper_Multi:
         self.duration = duration
         self.sample_rate = sample_rate
         self.activated_str = []
+        self.data_transfer = None
     
 
     def initialise_device(self, clock_mode : str = "external reference", clock_frequency : float = 80, channels_to_activate : list[bool] = [0,0,1,0,1,0,0,0], channel_amplitude : int = 5000, channel_offset : int = 0, trigger_settings : dict = {"trigger_type":"None", "trigger_channel":"CH0", "trigger_mode":"Rising edge", "trigger_level":5000}) -> bool:
@@ -45,7 +47,7 @@ class Spectrum_Wrapper_Multi:
         
         # --- Determine Some Properties
         Num_Samples = int( (self.duration*1e-3) * (self.sample_rate*1e6) )                 # Total Number of Samples
-        print("\n--- Initializing SPCM Card ---")
+        print("\n--- Initializing SPCM Card --- Mode : Multi")
         print("Duration = ", round(self.duration,5), "ms")
         print("Number of Samples = ", Num_Samples)
         print("Sampling Frequency = ", round(self.sample_rate,5), "MHz")
@@ -61,7 +63,7 @@ class Spectrum_Wrapper_Multi:
             self.card = value
 
             # --- Choose Mode
-            self.card.card_mode(spcm.SPC_REC_STD_SINGLE)  # single trigger standard mode
+            self.card.card_mode(spcm.SPC_REC_STD_MULTI)  # Multi Mode
             self.card.timeout(50 * units.s)  # timeout 50 s
 
             # --- Setup External Clock
@@ -171,12 +173,37 @@ class Spectrum_Wrapper_Multi:
                 trigger.ext0_level0(trigger_settings['trigger_level'] * units.mV, return_unit=units.mV)
 
 
+            # --- Set Up data transfer
+
+            samples_per_segment = Num_Samples
+            num_segments = 1
+            num_samples = num_segments * samples_per_segment
+
+            print("Samples per Segment = ", samples_per_segment)
+
+
+            self.data_transfer = spcm.Multi(self.card)
+            self.data_transfer.memory_size(num_samples)
+            self.data_transfer.allocate_buffer(samples_per_segment, num_segments) 
+
+
+            post_trigger = self.get_closest_8multiple(int(num_samples * 3/5 ))
+            post_trigger = num_samples-8
+            self.data_transfer.post_trigger(post_trigger) # Post trigger seems to need to be a multiple of 8, and be bigger than Num_Sample * 3/5
+
+
+
             initialized = True
 
         except Exception as e:
             hit_except = True
+            import os
             print("EXIT WITH ERROR : ")
             print(e)
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(exc_type, fname, exc_tb.tb_lineno)
+
             initialized = False
 
  
@@ -189,28 +216,27 @@ class Spectrum_Wrapper_Multi:
     def get_the_x_axis(self):
         return self.data_transfer.time_data().magnitude
 
-    def grab_trace(self, post_trig_ms : float = 0):
 
-        # --- Define the data buffer
-        data_transfer = spcm.DataTransfer(self.card)
-        data_transfer.duration(self.duration * units.ms, post_trigger_duration=post_trig_ms*units.ms)
-        
-        # start card and wait until recording is finished
+    def grab_trace(self, post_trig_ms : float = 0):
         self.card.start(spcm.M2CMD_CARD_ENABLETRIGGER, spcm.M2CMD_CARD_WAITREADY)
 
         # Start DMA transfer and wait until the data is transferred
-        data_transfer.start_buffer_transfer(spcm.M2CMD_DATA_STARTDMA, spcm.M2CMD_DATA_WAITDMA)
+        self.data_transfer.start_buffer_transfer(spcm.M2CMD_DATA_STARTDMA, spcm.M2CMD_DATA_WAITDMA)
 
-        # Plot the acquired data
-        time_data_s = data_transfer.time_data()
-
+        data = self.data_transfer.buffer
         all_data = []
         for channel in self.channels:
-            all_data.append( np.array(channel.convert_data(data_transfer.buffer[channel, :], units.V)) )
+            segment=0
+            all_data.append( np.array(channel.convert_data(data[segment, :, channel], units.V).magnitude) )
+
 
         return all_data
 
 
+
+    def get_closest_8multiple(self, n:int):
+        res = (n//8+1) * 8  # For now just take the next 8 multiple
+        return res
 
     def terminate_the_communication(self, manager, hit_except):
         try:
@@ -226,17 +252,22 @@ class Spectrum_Wrapper_Multi:
 
 
 
-
-
 def main():
-    controller = Spectrum_Wrapper_Single(duration = 50,
-                                         sample_rate= 0.2)
+    controller = Spectrum_Wrapper_Multi(duration=5, sample_rate= 0.2)
     
-    init = controller.initialise_device(trigger_settings= {"trigger_type":"External analog trigger", "trigger_channel":"CH0", "trigger_mode":"Rising edge", "trigger_level":5000})
-    data = np.transpose( controller.grab_trace() )
+    
+    initialized = controller.initialise_device( 
+                                                trigger_settings=       {"trigger_type":    "External analog trigger",
+                                                                            "trigger_channel": "CH0",
+                                                                            "trigger_mode":  "Rising edge",
+                                                                            "trigger_level":   500}
+                                                )
+
+    data = controller.grab_trace()
 
     import matplotlib.pyplot as plt
-    plt.plot(data)
+    plt.plot(data[0])
+    plt.plot(data[1])
     plt.show()
 
 if __name__=="__main__":

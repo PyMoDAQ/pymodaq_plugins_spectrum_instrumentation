@@ -22,7 +22,7 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
         """
 
     params = comon_parameters + [
-        {'title': 'Aquisition Mode', 'name':'DAQ_mode', 'type':'list', 'limits': [ "Single", "Multi WIP", "FIFO WIP" ], "value":"Single" },
+        {'title': 'Aquisition Mode', 'name':'DAQ_mode', 'type':'list', 'limits': [ "Single", "Multi", "FIFO WIP" ], "value":"Multi" },
 
         {'title': 'Channels:', 'name': 'channels', 'type': 'group', 'children':[
             {'title': 'CH0', 'name': 'c0', 'type': 'led_push', 'value': False, 'default': False},
@@ -134,6 +134,9 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
                                                                                      "trigger_level":   self.settings.child("trig_params", "triggerLevel").value()}
                                                             )
             
+
+
+
 
         else:
             self.controller = controller
