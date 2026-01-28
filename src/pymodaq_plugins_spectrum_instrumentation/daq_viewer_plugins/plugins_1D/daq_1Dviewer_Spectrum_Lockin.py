@@ -68,7 +68,6 @@ class DAQ_1DViewer_Spectrum_Lockin(DAQ_1DViewer_Spectrum):
         self.settings.child('lock_in', 'diffChannel').setLimits( chan_str )
         self.settings.child('lock_in', 'sumChannel').setLimits( chan_str )
 
-        print(chan_str)
         print("\n--- Lock In Info")
         print(f"Number of Pulses = {self.num_pulses}")
         print(f"Number of LI periods = {self.num_LI_period}") 

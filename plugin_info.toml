@@ -1,15 +1,12 @@
-## To modify by developer(s) of the plugin
-
 [plugin-info]
-SHORT_PLUGIN_NAME = 'spectrum_instrumentation'  #to be modified, for instance daqmx then rename the module name:
-# (pymodaq_plugins_spectrum_instrumentation become pymodaq_plugins_daqmx for instance)
+SHORT_PLUGIN_NAME = 'spectrum_instrumentation'
 
 package-url = 'https://github.com/PyMoDAQ/pymodaq_plugins_spectrum_instrumentation' #to modify
-description = 'some word about your plugin'
+description = 'An implementation for Spectrum DAQ cards with Lock-In functionalities'
 
-author = 'Author Name'
-author-email = 'Author email'
-license = 'MIT'
+author = 'Malo Hervé'
+author-email = 'malo.hervé@epfl.ch'
+license = 'DQML'
 
 [plugin-install]
 #packages required for your plugin:
