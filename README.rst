@@ -16,7 +16,7 @@ Authors
 Instruments
 ===========
 
-This plugin was created with a 
+This plugin was created with a model M2p.5936-x4 .
 
 Viewer1D
 ++++++++
@@ -29,5 +29,5 @@ Installation instructions
 =========================
 
 * Clone and install the plugin.
-* Install the *spcm* python package using pip
+* Install the *spcm* python package using pip. Tested with version spcm-1.12.0.
 * Tested on Windows 11
