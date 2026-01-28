@@ -27,9 +27,9 @@ class DAQ_1DViewer_Spectrum_Lockin(DAQ_1DViewer_Spectrum):
         {'title': 'Lock-in', 'name': 'lock_in', 'type': 'group', 'children': [
             {'title': 'Difference channel', 'name': 'diffChannel', 'type':'list', 'limits': ["CH0", "CH1", "CH2", "CH3", "CH4"], "value":"CH2" },
             {'title': 'Intensity channel:', 'name': 'sumChannel',  'type':'list', 'limits': ["CH0", "CH1", "CH2", "CH3", "CH4"], "value":"CH4" },
-            {'title': 'Lock In freq.: (Hz)', 'name': 'LI_PulseFreq', 'type': 'int', 'value': 500, 'default': 500},
+            {'title': 'Lock In freq.:', 'name': 'LI_PulseFreq', 'type': 'int', 'value': 500, 'default': 500, 'suffix':'Hz'},
             {'title': 'Subtract background', 'name': 'BG_sub', 'type': 'bool', 'value': True, 'default': True},
-            {'title': 'Background Proportion (%)', 'name': 'BG_prop', 'type': 'slide', 'value': 70, 'default': 70, 'min': 0, 'max': 100, 'subtype': 'linear'},
+            {'title': 'Background Proportion', 'name': 'BG_prop', 'type': 'slide', 'value': 70, 'default': 70, 'min': 0, 'max': 100, 'subtype': 'linear', 'suffix':'%'},
             {'title': 'PD gain: (read only) ', 'name': 'Gain', 'type': 'float', 'value': 10, 'default': 10, 'readonly': True},
             {'title': 'Conversion factor: (read only) ', 'name': 'Conversion', 'type': 'float', 'value': 2, 'default': 2, 'readonly': True},
 
