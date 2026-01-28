@@ -34,7 +34,7 @@ class DAQ_1DViewer_Spectrum_Lockin(DAQ_1DViewer_Spectrum):
             {'title': 'Conversion factor: (read only) ', 'name': 'Conversion', 'type': 'float', 'value': 2, 'default': 2, 'readonly': True},
 
             {'title': 'Plotting & Saving', 'name': 'PlotSave', 'type': 'group', 'children': [
-                {'title': 'Show trace', 'name': 'showTrace', 'type': 'bool_push', 'value': False, 'default': False},
+                {'title': 'Show trace', 'name': 'Trace', 'type': 'led_push', 'value': False, 'default': False},
                 {'title': 'Pulse train', 'name': 'PulseTrain', 'type': 'led_push', 'value': False, 'default': False},
                 {'title': 'Pulse average', 'name': 'PulseAverage', 'type': 'led_push', 'value': False, 'default': False},
                 {'title': 'I_Bd', 'name': 'I_Bd', 'type': 'led_push', 'value': False, 'default': False},
@@ -118,10 +118,12 @@ class DAQ_1DViewer_Spectrum_Lockin(DAQ_1DViewer_Spectrum):
             self.hit_except = True
             
 
-        # - Create Pymodaq objects for all
+        # --- Create Pymodaq objects for all
 
-        dwa1D1 = DataFromPlugins(name='Trace', data=data_tot, dim='Data1D', labels=self.controller.activated_str, do_plot=self.settings.child('lock_in', 'PlotSave', 'showTrace').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'showTrace').value())
-
+        # Trace
+        dwa1D1 = DataFromPlugins(name='Trace', data=data_tot, dim='Data1D', 
+                                 labels=self.controller.activated_str, do_plot=self.settings.child('lock_in', 'PlotSave', 'Trace').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'Trace').value())
+        # Integrated Trace
         dwatrain = DataFromPlugins(name='Pulse train', data=[diff_data_int, sum_data_int], dim='Data1D', labels=['D', 'I'], do_plot=self.settings.child('lock_in', 'PlotSave', 'PulseTrain').value(), do_save=True)
 
         dwa1D3 = DataFromPlugins(name='Pulse average', data=[np.array([D_a]), np.array([I_a])], dim='Data0D',
@@ -156,8 +158,8 @@ class DAQ_1DViewer_Spectrum_Lockin(DAQ_1DViewer_Spectrum):
 
 
         # New Version
-        data_to_export = [dwa1D1]
-        export = {'PulseTrain':dwatrain, 'PulseAverage':dwa1D3, 'I_Bd':dwaIBd, 'I_Ba':dwaIBa, 'NDa':dwaNDa, 'D_Bd':dwaDBd, 'D_Ba':dwaDBa, 'ND_Bd':dwaNDBd, 'ND_Ba':dwaNDBa, 'phi_Bd':dwaphi_Bd, 'phi_Ba':dwaphi_Ba }
+        data_to_export = []
+        export = {'Trace':dwa1D1, 'PulseTrain':dwatrain, 'PulseAverage':dwa1D3, 'I_Bd':dwaIBd, 'I_Ba':dwaIBa, 'NDa':dwaNDa, 'D_Bd':dwaDBd, 'D_Ba':dwaDBa, 'ND_Bd':dwaNDBd, 'ND_Ba':dwaNDBa, 'phi_Bd':dwaphi_Bd, 'phi_Ba':dwaphi_Ba }
         for type_str in export.keys():
             if self.settings.child('lock_in', 'PlotSave', type_str).value():
                 data_to_export.append(export[type_str])  # Only plot those we want to save
