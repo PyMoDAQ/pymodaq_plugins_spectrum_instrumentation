@@ -59,12 +59,16 @@ class DAQ_1DViewer_Spectrum_Lockin(DAQ_1DViewer_Spectrum):
 
         # --- Calculate some Lock In Parameters
         self.LI_pulseFreq = self.settings.child('lock_in', 'LI_PulseFreq').value()*2 *1e-3   # kHz
-        self.num_pulses = self.settings.child('timing', 'NumLPulses').value()
+        self.num_pulses = self.settings.child('timing', 'Num_Pulses').value()
         self.num_LI_period = int( self.settings.child('timing', 'Range').value() * self.LI_pulseFreq)          # LI = Lock In, LI_Period = Up or Down
-        self.points_per_pulse = self.settings.child('timing', 'NumSinPulse').value() # Points per pulse
+        self.points_per_pulse = self.settings.child('timing', 'Sample_per_Pulse').value() # Points per pulse
         self.pulse_per_LI_Period = int(self.num_pulses/self.num_LI_period) # Pulses per Period
 
+        chan_str = [param.title() for param in self.settings.child("channels").children() if param.type()=="led_push" and param.value()]
+        self.settings.child('lock_in', 'diffChannel').setLimits( chan_str )
+        self.settings.child('lock_in', 'sumChannel').setLimits( chan_str )
 
+        print(chan_str)
         print("\n--- Lock In Info")
         print(f"Number of Pulses = {self.num_pulses}")
         print(f"Number of LI periods = {self.num_LI_period}") 
@@ -72,6 +76,12 @@ class DAQ_1DViewer_Spectrum_Lockin(DAQ_1DViewer_Spectrum):
         print(f"Pulse Per LI Period = {self.pulse_per_LI_Period}")
 
 
+    def commit_settings(self, param):
+        super().commit_settings(param)
+
+        if param.name()=="BG_sub":
+            if param.value(): self.settings.child("lock_in", "BG_prop").show()
+            else: self.settings.child("lock_in", "BG_prop").hide()
     
 
 
@@ -80,7 +90,7 @@ class DAQ_1DViewer_Spectrum_Lockin(DAQ_1DViewer_Spectrum):
         """
 
         # --- Grab a Trace
-        post_trig =  (1-self.settings.child("trig_params", "preTrig").value()/100) * self.settings.child("timing", "Range").value() / self.settings.child("timing", "NumLPulses").value()
+        post_trig =  (1-self.settings.child("trig_params", "preTrig").value()/100) * self.settings.child("timing", "Range").value() / self.settings.child("timing", "Num_Pulses").value()
         try:  data_tot = self.controller.grab_trace( post_trig_ms = post_trig )
         except Exception as e:
             print("Capture Failed !")

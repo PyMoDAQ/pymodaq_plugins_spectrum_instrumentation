@@ -7,7 +7,7 @@ from pymodaq.utils.parameter import Parameter
 from pymodaq_plugins_spectrum_instrumentation.hardware.SpectrumCard_wrapper_Single import Spectrum_Wrapper_Single
 from pymodaq_plugins_spectrum_instrumentation.hardware.SpectrumCard_wrapper_Multi import Spectrum_Wrapper_Multi
 
-#TODO : Make Post trig variable
+#TODO : Make Post trig variable in multo
 #TODO : Make it possible to change params without rebooting card
 
 class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
@@ -19,7 +19,7 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
         The particular object that allow the communication with the hardware, in general a python wrapper around the
          hardware library.
 
-        """
+    """
 
     params = comon_parameters + [
         {'title': 'Aquisition Mode', 'name':'DAQ_mode', 'type':'list', 'limits': [ "Single", "Multi", "FIFO WIP" ], "value":"Multi" },
@@ -38,8 +38,8 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
             ], 'expanded': False},
 
         {'title': 'Timing', 'name': 'timing', 'type': 'group', 'children': [
-            {'title': 'Nbr. of laser pulses:', 'name': 'NumLPulses', 'type': 'int', 'value': 200, 'default': 200},
-            {'title': 'Nbr. of samples per laser pulse:', 'name': 'NumSinPulse', 'type': 'int', 'value': 200, 'default': 200},
+            {'title': 'Nbr. of laser pulses:', 'name': 'Num_Pulses', 'type': 'int', 'value': 200, 'default': 200},
+            {'title': 'Nbr. of samples per laser pulse:', 'name': 'Sample_per_Pulse', 'type': 'int', 'value': 200, 'default': 200},
             {'title': 'Sample rate (read only) :', 'name': 'sampleRate', 'type': 'float', 'value': 0.2, 'default': 0.2, 'readonly' : True, 'suffix':'MHz'},
             {'title': 'Number of samples (read only) :', 'name': 'NumSamples', 'type': 'int', 'value': 40, 'default': 40, 'readonly' : True, 'suffix':'S'},
             {'title': 'Time range (read only) :', 'name': 'Range', 'type': 'float', 'value': 200, 'default': 200, 'readonly': True, 'suffix':'ms'},
@@ -48,7 +48,7 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
 
         {'title': 'Trigger parameters', 'name': 'trig_params', 'type': 'group', 'children':[
             {'title': 'Trigger:', 'name': 'triggerType', 'type':'list', 'limits': [ "None", "Channel trigger", "Software trigger", "External analog trigger" ], "value":"External analog trigger" },
-            {'title': 'Trigger channel:', 'name': 'triggerChannel', 'type':'list', 'limits': ["CH0", "CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7"], "value":"CH0" },
+            {'title': 'Trigger channel:', 'name': 'triggerChannel', 'type':'list', 'limits': ["CH0", "CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7"], "value":"CH0", "visible":False },
             {'title': 'Trigger mode', 'name': 'triggerMode', 'type':'list', 'limits': [ "Rising edge", "Falling edge", "Both"], "value":"Rising edge" },
             {'title': 'Trigger level:', 'name': 'triggerLevel', 'type': 'slide', 'value': 100, 'default': 100, 'min': -500, 'max': 500, 'subtype': 'linear', 'suffix':'mV'},
             {'title': 'Pre-Trig:', 'name': 'preTrig', 'type': 'slide', 'value': 80, 'default': 80, 'min': 0, 'max': 100, 'subtype': 'linear', 'suffix':'%'},
@@ -100,18 +100,16 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
             channel_nbr = int(channel[1])
             self.controller.setChannel(channel_nbr, self.settings.child('Amp').value(), self.settings.child('Offset').value())
         
-        elif param.name() == "average":
-            self.settings.child('lock_in', 'operation', 'integrate').setValue(not param.value())
 
-        elif param.name() == "integrate":
-            self.settings.child('lock_in', 'operation', 'average').setValue(not param.value())
-
-        elif param.name() == "NumLPulses" or param.name() == "NumSinPulse":
+        elif param.name() == "Num_Pulses" or param.name() == "Sample_per_Pulse":
             self.update_NumSamples()
             self.update_Range()
             self.update_sampleRate()
 
             # self.controller.update()  # TODO
+        elif param.name() == "triggerType":
+            if param.value()=="Channel trigger": self.settings.child("trig_params", "triggerChannel").show()
+            else : self.settings.child("trig_params", "triggerChannel").hide()
 
 
     def ini_detector(self, controller=None):
@@ -157,7 +155,7 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
         """
 
         # --- Grab a Trace
-        post_trig =  (1-self.settings.child("trig_params", "preTrig").value()/100) * self.settings.child("timing", "Range").value() / self.settings.child("timing", "NumLPulses").value()
+        post_trig =  (1-self.settings.child("trig_params", "preTrig").value()/100) * self.settings.child("timing", "Range").value() / self.settings.child("timing", "Num_Pulses").value()
         try:  data_tot = self.controller.grab_trace( post_trig_ms = post_trig )     
         except Exception as e:
             print("Capture Failed !")
@@ -173,8 +171,8 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
         self.dte_signal.emit(data)
 
 
-    def update_sampleRate(self):    self.settings.child('timing', 'sampleRate').setValue(       self.settings.child("timing", "NumSinPulse").value() / (1/ (self.settings.child("timing", "PulseFreq").value() * 1e3) ) * 1e-6      )  # Points per Pulse / PulsePeriod, in MHz
-    def update_NumSamples(self):    self.settings.child('timing', 'NumSamples').setValue(       self.settings.child("timing", "NumLPulses").value() * self.settings.child("timing", "NumSinPulse").value()                          )    # Num of Pulses * Samples per Pulse
+    def update_sampleRate(self):    self.settings.child('timing', 'sampleRate').setValue(       self.settings.child("timing", "Sample_per_Pulse").value() / (1/ (self.settings.child("timing", "PulseFreq").value() * 1e3) ) * 1e-6      )  # Points per Pulse / PulsePeriod, in MHz
+    def update_NumSamples(self):    self.settings.child('timing', 'NumSamples').setValue(       self.settings.child("timing", "Num_Pulses").value() * self.settings.child("timing", "Sample_per_Pulse").value()                          )    # Num of Pulses * Samples per Pulse
     def update_Range(self):         self.settings.child('timing', 'Range').setValue(        self.settings.child('timing', 'NumSamples').value() / (self.settings.child('timing', 'sampleRate').value()*1e6) * 1e3     )  # NumPulse / sampleRate[MHz], in ms
 
 
