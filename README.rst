@@ -51,6 +51,8 @@ This is done by giving a lock-in frequency.
 This Lock In viewer is made for Balanced measurement, so giving a "Sum" (I) and "Difference" (D) channel is also required to calculate the normalized difference (ND).
 Each trace is seperated into isolated pulses and integrated.
 Finally, background removal (Pulse - signal after pulse) is supported and toggleable.
+
 The user can then choose to represent a few parameters : 
+
 * (I/D/ND)_Ba : corresponds the average signal in the (I/D/ND) channel
-* (I/D/ND)_Bd : corresponds to the average locked-in difference, containing the signal at the lock-in frequency
+* (I/D/ND)_Bd : corresponds to the average locked-in difference, containing the signal at the lock-in frequency.
