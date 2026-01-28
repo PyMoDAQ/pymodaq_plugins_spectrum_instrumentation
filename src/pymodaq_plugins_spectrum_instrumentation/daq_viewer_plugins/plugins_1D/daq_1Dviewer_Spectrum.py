@@ -41,7 +41,7 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
             {'title': 'Nbr. of laser pulses:', 'name': 'Num_Pulses', 'type': 'int', 'value': 200, 'default': 200},
             {'title': 'Nbr. of samples per laser pulse:', 'name': 'Sample_per_Pulse', 'type': 'int', 'value': 200, 'default': 200},
             {'title': 'Sample rate (read only) :', 'name': 'sampleRate', 'type': 'float', 'value': 0.2, 'default': 0.2, 'readonly' : True, 'suffix':'MHz'},
-            {'title': 'Number of samples (read only) :', 'name': 'NumSamples', 'type': 'int', 'value': 40, 'default': 40, 'readonly' : True, 'suffix':'S'},
+            {'title': 'Number of samples (read only) :', 'name': 'NumSamples', 'type': 'int', 'value': 40000, 'default': 40000, 'readonly' : True, 'suffix':'S'},
             {'title': 'Time range (read only) :', 'name': 'Range', 'type': 'float', 'value': 200, 'default': 200, 'readonly': True, 'suffix':'ms'},
             {'title': 'Laser pulses freq. (read only) :', 'name': 'PulseFreq', 'type': 'int', 'value': 1, 'default': 1, 'readonly' : True, 'suffix':'kHz'},
             ]},
@@ -131,8 +131,6 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
                                                                                      "trigger_mode":    self.settings.child("trig_params", "triggerMode").value(),
                                                                                      "trigger_level":   self.settings.child("trig_params", "triggerLevel").value()}
                                                             )
-            
-
 
 
 
@@ -160,10 +158,12 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
         except Exception as e:
             print("Capture Failed !")
             print(e)
-            self.emit_status(ThreadCommand('Update_Status', ['Card asked while running ']))
+            self.emit_status(ThreadCommand('Update_Status', ['Error in card Aquisition ']))
             self.hit_except = True
 
-        dwa = DataFromPlugins(name='Trace', data=data_tot, dim='Data1D')
+        self.x_axis = Axis(data=self.controller.get_the_x_axis(), label='Time', units="s", index=0)
+
+        dwa = DataFromPlugins(name='Trace', data=data_tot, dim='Data1D', axes=[self.x_axis])
 
         data_to_export = [dwa]
 

@@ -34,14 +34,13 @@ class DAQ_1DViewer_Spectrum_Lockin(DAQ_1DViewer_Spectrum):
             {'title': 'Conversion factor: (read only) ', 'name': 'Conversion', 'type': 'float', 'value': 2, 'default': 2, 'readonly': True},
 
             {'title': 'Plotting & Saving', 'name': 'PlotSave', 'type': 'group', 'children': [
-                {'title': 'Show trace', 'name': 'Trace', 'type': 'led_push', 'value': False, 'default': False},
+                {'title': 'Show trace', 'name': 'Trace', 'type': 'led_push', 'value': True, 'default': True},
                 {'title': 'Pulse train', 'name': 'PulseTrain', 'type': 'led_push', 'value': False, 'default': False},
                 {'title': 'Pulse average', 'name': 'PulseAverage', 'type': 'led_push', 'value': False, 'default': False},
                 {'title': 'I_Bd', 'name': 'I_Bd', 'type': 'led_push', 'value': False, 'default': False},
                 {'title': 'I_Ba', 'name': 'I_Ba', 'type': 'led_push', 'value': False, 'default': False},
                 {'title': 'D_Bd', 'name': 'D_Bd', 'type': 'led_push', 'value': False, 'default': False},
                 {'title': 'D_Ba', 'name': 'D_Ba', 'type': 'led_push', 'value': False, 'default': False},
-                {'title': 'NDa', 'name': 'NDa', 'type': 'led_push', 'value': False, 'default': False},
                 {'title': 'ND_Bd', 'name': 'ND_Bd', 'type': 'led_push', 'value': True, 'default': True},
                 {'title': 'ND_Ba', 'name': 'ND_Ba', 'type': 'led_push', 'value': False, 'default': False},
                 {'title': 'phi_Bd', 'name': 'phi_Bd', 'type': 'led_push', 'value': False, 'default': False},
@@ -97,6 +96,8 @@ class DAQ_1DViewer_Spectrum_Lockin(DAQ_1DViewer_Spectrum):
             self.emit_status(ThreadCommand('Update_Status', ['Card asked while running ']))
             self.hit_except = True
 
+
+        # --- Seperate sum and diff
         ii = self.controller.activated_str.index( self.settings.child('lock_in', 'diffChannel').value() )
         index = len(self.controller.activated_str[:ii])
         diff_data = data_tot[index]
@@ -118,59 +119,63 @@ class DAQ_1DViewer_Spectrum_Lockin(DAQ_1DViewer_Spectrum):
             self.hit_except = True
             
 
-        # --- Create Pymodaq objects for all
+        # --- Create Pymodaq export
+        self.x_axis = Axis(data=self.controller.get_the_x_axis(), label='Time', units="s", index=0)
 
-        # Trace
-        dwa1D1 = DataFromPlugins(name='Trace', data=data_tot, dim='Data1D', 
-                                 labels=self.controller.activated_str, do_plot=self.settings.child('lock_in', 'PlotSave', 'Trace').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'Trace').value())
-        # Integrated Trace
-        dwatrain = DataFromPlugins(name='Pulse train', data=[diff_data_int, sum_data_int], dim='Data1D', labels=['D', 'I'], do_plot=self.settings.child('lock_in', 'PlotSave', 'PulseTrain').value(), do_save=True)
+        # Integrated Trace, only one to always export
+        dwa_int = DataFromPlugins(name='Pulse train', data=[diff_data_int, sum_data_int], dim='Data1D', labels=['D', 'I'], do_plot=self.settings.child('lock_in', 'PlotSave', 'PulseTrain').value())
+        data_to_export = [dwa_int]
 
-        dwa1D3 = DataFromPlugins(name='Pulse average', data=[np.array([D_a]), np.array([I_a])], dim='Data0D',
-                                 labels=['Da', 'Ia'], do_plot=self.settings.child('lock_in', 'PlotSave', 'PulseAverage').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'PulseAverage').value())
-        
-        dwaIBd = DataFromPlugins(name='I_Bd', data=I_Bd, dim='Data0D',
-                                 labels=['I_Bd'], do_plot=self.settings.child('lock_in', 'PlotSave', 'I_Bd').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'I_Bd').value())
-        
-        dwaIBa    = DataFromPlugins(name='I_Ba', data=I_Ba, dim='Data0D',
-                                 labels=['I_Ba'], do_plot=self.settings.child('lock_in', 'PlotSave', 'I_Ba').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'I_Ba').value())
-        
-        dwaNDa = DataFromPlugins(name='NDa', data=ND_a, dim='Data0D',
-                                 labels=['NDa'], do_plot=self.settings.child('lock_in', 'PlotSave', 'NDa').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'NDa').value())
-        
-        dwaDBd = DataFromPlugins(name='D_Bd', data=D_Bd, dim='Data0D',
-                                 labels=['D_Bd'], do_plot=self.settings.child('lock_in', 'PlotSave', 'D_Bd').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'D_Bd').value())
+        # Also deal with Trace separately as it is 1D
+        if self.settings.child('lock_in', 'PlotSave', 'Trace').value():
+            dwa_trace = DataFromPlugins(name='Trace', data=data_tot, dim='Data1D', labels=self.controller.activated_str, axes=[self.x_axis])
+            data_to_export.append(dwa_trace)
 
-        dwaDBa    = DataFromPlugins(name='D_Ba', data=D_Ba, dim='Data0D',
-                                 labels=['D_Ba'], do_plot=self.settings.child('lock_in', 'PlotSave', 'D_Ba').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'D_Ba').value())
-
-        dwaNDBd = DataFromPlugins(name='ND_Bd', data=ND_Bd, dim='Data0D',
-                                 labels=['ND_Bd'], do_plot=self.settings.child('lock_in', 'PlotSave', 'ND_Bd').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'ND_Bd').value())
-
-        dwaNDBa    = DataFromPlugins(name='ND_Ba', data=ND_Ba, dim='Data0D',
-                                 labels=['ND_Ba'], do_plot=self.settings.child('lock_in', 'PlotSave', 'ND_Ba').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'ND_Ba').value())
-
-        dwaphi_Bd = DataFromPlugins(name='phi_Bd', data=phi_Bd, dim='Data0D',
-                                 labels=['phi_Bd'], do_plot=self.settings.child('lock_in', 'PlotSave', 'phi_Bd').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'phi_Bd').value())
-
-        dwaphi_Ba    = DataFromPlugins(name='phi_Ba', data=phi_Ba, dim='Data0D',
-                                 labels=['phi_Ba'], do_plot=self.settings.child('lock_in', 'PlotSave', 'phi_Ba').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'phi_Ba').value())
-
-
-        # New Version
-        data_to_export = []
-        export = {'Trace':dwa1D1, 'PulseTrain':dwatrain, 'PulseAverage':dwa1D3, 'I_Bd':dwaIBd, 'I_Ba':dwaIBa, 'NDa':dwaNDa, 'D_Bd':dwaDBd, 'D_Ba':dwaDBa, 'ND_Bd':dwaNDBd, 'ND_Ba':dwaNDBa, 'phi_Bd':dwaphi_Bd, 'phi_Ba':dwaphi_Ba }
-        for type_str in export.keys():
-            if self.settings.child('lock_in', 'PlotSave', type_str).value():
-                data_to_export.append(export[type_str])  # Only plot those we want to save
-
-
-        # # Old Version
-        # data_to_export = [dwatrain, dwa1D3, dwa1D1, dwaIBd, dwaIBa, dwaNDa, dwaDBd,dwaDBa,dwaNDBd, dwaNDBa, dwaphi_Bd, dwaphi_Ba]
-
+        # Iterate through the calculated data "I_Ba"n "I_Bd"...
+        export = {'I_Bd':I_Bd, 'I_Ba':I_Ba, 'D_Bd':D_Bd, 'D_Ba':D_Ba, 'ND_Bd':ND_Bd, 'ND_Ba':ND_Ba, 'phi_Bd':phi_Bd, 'phi_Ba':phi_Ba }
+        types = [ param.name() for param in self.settings.child('lock_in', 'PlotSave').children() if (param.value() and param.type()=="led_push" and param.name()!="Pulse train" and param.name()!="Trace") ]
+        for type in types:
+            dwa = DataFromPlugins(name=type, data=export[type], dim='Data0D', labels=[type])
+            data_to_export.append(dwa)
 
         data = DataToExport('SPLockIn', data=data_to_export)
         self.dte_signal.emit(data)
+
+        # # Old Version
+        # dwa_trace = DataFromPlugins(name='Trace', data=data_tot, dim='Data1D', 
+        #                          labels=self.controller.activated_str, do_plot=self.settings.child('lock_in', 'PlotSave', 'Trace').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'Trace').value())
+
+        # dwa_IBd = DataFromPlugins(name='I_Bd', data=I_Bd, dim='Data0D',
+        #                          labels=['I_Bd'], do_plot=self.settings.child('lock_in', 'PlotSave', 'I_Bd').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'I_Bd').value())
+        
+        # dwa_IBa    = DataFromPlugins(name='I_Ba', data=I_Ba, dim='Data0D',
+        #                          labels=['I_Ba'], do_plot=self.settings.child('lock_in', 'PlotSave', 'I_Ba').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'I_Ba').value())
+                
+        # dwa_DBd = DataFromPlugins(name='D_Bd', data=D_Bd, dim='Data0D',
+        #                          labels=['D_Bd'], do_plot=self.settings.child('lock_in', 'PlotSave', 'D_Bd').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'D_Bd').value())
+
+        # dwa_DBa    = DataFromPlugins(name='D_Ba', data=D_Ba, dim='Data0D',
+        #                          labels=['D_Ba'], do_plot=self.settings.child('lock_in', 'PlotSave', 'D_Ba').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'D_Ba').value())
+
+        # dwa_NDBd = DataFromPlugins(name='ND_Bd', data=ND_Bd, dim='Data0D',
+        #                          labels=['ND_Bd'], do_plot=self.settings.child('lock_in', 'PlotSave', 'ND_Bd').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'ND_Bd').value())
+
+        # dwa_NDBa    = DataFromPlugins(name='ND_Ba', data=ND_Ba, dim='Data0D',
+        #                          labels=['ND_Ba'], do_plot=self.settings.child('lock_in', 'PlotSave', 'ND_Ba').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'ND_Ba').value())
+
+        # dwa_phi_Bd = DataFromPlugins(name='phi_Bd', data=phi_Bd, dim='Data0D',
+        #                          labels=['phi_Bd'], do_plot=self.settings.child('lock_in', 'PlotSave', 'phi_Bd').value(), do_save=self.settings.child('lock_in', 'PlotSave', 'phi_Bd').value())
+
+        # dwa_phi_Ba    = DataFromPlugins(name='phi_Ba', data=phi_Ba, dim='Data0D',
+
+        # data_to_export = [dwa_int]
+        # export = {'Trace':dwa_trace, 'I_Bd':dwa_IBd, 'I_Ba':dwa_IBa, 'D_Bd':dwa_DBd, 'D_Ba':dwa_DBa, 'ND_Bd':dwa_NDBd, 'ND_Ba':dwa_NDBa, 'phi_Bd':dwa_phi_Bd, 'phi_Ba':dwa_phi_Ba }
+        # for type_str in export.keys():
+        #     if self.settings.child('lock_in', 'PlotSave', type_str).value():
+        #         data_to_export.append(export[type_str])  # Only plot those we want to save
+
+
+
 
 
 

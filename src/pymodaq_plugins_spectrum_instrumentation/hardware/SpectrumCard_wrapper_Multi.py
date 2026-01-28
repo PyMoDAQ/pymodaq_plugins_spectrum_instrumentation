@@ -253,7 +253,7 @@ class Spectrum_Wrapper_Multi:
 
 
 def main():
-    controller = Spectrum_Wrapper_Multi(duration=5, sample_rate= 0.2)
+    controller = Spectrum_Wrapper_Multi(duration=5, sample_rate=1)
     
     
     initialized = controller.initialise_device( 
@@ -264,11 +264,16 @@ def main():
                                                 )
 
     data = controller.grab_trace()
+    x = controller.get_the_x_axis()*1e3
+    print(data[0].shape)
+    print(x[-1])
 
     import matplotlib.pyplot as plt
-    plt.plot(data[0])
-    plt.plot(data[1])
+    plt.plot(x, data[0])
+    plt.plot(x, data[1])
     plt.show()
+
+
 
 if __name__=="__main__":
     main()

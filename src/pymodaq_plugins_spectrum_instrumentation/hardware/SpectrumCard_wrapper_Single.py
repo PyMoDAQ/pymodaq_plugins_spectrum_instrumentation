@@ -24,6 +24,7 @@ class Spectrum_Wrapper_Single:
         self.duration = duration
         self.sample_rate = sample_rate
         self.activated_str = []
+        self.data_transfer=None
     
 
     def initialise_device(self, clock_mode : str = "external reference", clock_frequency : float = 80, channels_to_activate : list[bool] = [0,0,1,0,1,0,0,0], channel_amplitude : int = 5000, channel_offset : int = 0, trigger_settings : dict = {"trigger_type":"None", "trigger_channel":"CH0", "trigger_mode":"Rising edge", "trigger_level":5000}) -> bool:
@@ -186,27 +187,27 @@ class Spectrum_Wrapper_Single:
 
 
 
-    def get_the_x_axis(self):
-        return self.data_transfer.time_data().magnitude
+    def get_the_x_axis(self): 
+        return self.data_transfer.time_data().magnitude - self.data_transfer.time_data().magnitude[0]   # Add offset otherwise trigger makes trace start in the negatives
 
     def grab_trace(self, post_trig_ms : float = 0):
 
         # --- Define the data buffer
-        data_transfer = spcm.DataTransfer(self.card)
-        data_transfer.duration(self.duration * units.ms, post_trigger_duration=post_trig_ms*units.ms)
+        self.data_transfer = spcm.DataTransfer(self.card)
+        self.data_transfer.duration(self.duration * units.ms, post_trigger_duration=post_trig_ms*units.ms)
         
         # start card and wait until recording is finished
         self.card.start(spcm.M2CMD_CARD_ENABLETRIGGER, spcm.M2CMD_CARD_WAITREADY)
 
         # Start DMA transfer and wait until the data is transferred
-        data_transfer.start_buffer_transfer(spcm.M2CMD_DATA_STARTDMA, spcm.M2CMD_DATA_WAITDMA)
+        self.data_transfer.start_buffer_transfer(spcm.M2CMD_DATA_STARTDMA, spcm.M2CMD_DATA_WAITDMA)
 
         # Plot the acquired data
-        time_data_s = data_transfer.time_data()
+        time_data_s = self.data_transfer.time_data()
 
         all_data = []
         for channel in self.channels:
-            all_data.append( np.array(channel.convert_data(data_transfer.buffer[channel, :], units.V)) )
+            all_data.append( np.array(channel.convert_data(self.data_transfer.buffer[channel, :], units.V)) )
 
         return all_data
 
@@ -234,9 +235,9 @@ def main():
     
     init = controller.initialise_device(trigger_settings= {"trigger_type":"External analog trigger", "trigger_channel":"CH0", "trigger_mode":"Rising edge", "trigger_level":5000})
     data = np.transpose( controller.grab_trace() )
-
+    x = controller.get_the_x_axis()
     import matplotlib.pyplot as plt
-    plt.plot(data)
+    plt.plot(x, data)
     plt.show()
 
 if __name__=="__main__":
