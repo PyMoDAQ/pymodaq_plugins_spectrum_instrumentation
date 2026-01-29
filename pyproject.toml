@@ -18,11 +18,11 @@ dependencies = [
 ]
 
 authors = [
-    {name = "Malo Hervé", email = "malo.hervé@epfl.ch'"},
+    {name = "Malo Herve", email = "malo.herve@epfl.ch"},
     #todo: list here all authors of your plugin
 ]
 maintainers = [
-    {name = "Malo Hervé", email = "malo.hervé@epfl.ch'"},
+    {name = "Malo Herve", email = "malo.herve@epfl.ch"},
     #todo: list here all maintainers of your plugin
 ]
 
