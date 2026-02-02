@@ -12,7 +12,7 @@ import sys
 import spcm
 from spcm import units
 # from pymodaq_plugins_template2.hardware.SpectrumCard_wrapper import Digitizer_Wrapper
-from pymodaq_plugins_spectrum_instrumentation.hardware.SpectrumCard_wrapper2 import Digitizer_Wrapper
+from pymodaq_plugins_spectrum_instrumentation.src.pymodaq_plugins_spectrum_instrumentation.Legacy_Files.SpectrumCard_wrapper2 import Digitizer_Wrapper
 
 
 # class PythonWrapperOfYourInstrument:

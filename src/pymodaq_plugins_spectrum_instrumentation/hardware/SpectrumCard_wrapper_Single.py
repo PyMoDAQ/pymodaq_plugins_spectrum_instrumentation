@@ -87,7 +87,7 @@ class Spectrum_Wrapper_Single:
             activated_channels = []
 
             for ii in range( len(channels_to_activate) ):
-                if channels_to_activate[ii] == True:
+                if channels_to_activate[ii]:
                     self.activated_str.append('CH'+str(ii))
                     match ii:
                         case 0: activated_channels.append(spcm.CHANNEL0)
@@ -100,16 +100,14 @@ class Spectrum_Wrapper_Single:
                         case 7: activated_channels.append(spcm.CHANNEL7)
 
             # Can only activate certain number of channels ...
-            if len(activated_channels) == 1:
-                self.channels = spcm.Channels(self.card, card_enable=activated_channels[0])
-            elif len(activated_channels) == 2:
-                self.channels = spcm.Channels(self.card, card_enable=activated_channels[0] | activated_channels[1])
-            elif len(activated_channels) == 3:
-                self.channels = spcm.Channels(self.card, card_enable=activated_channels[0] | activated_channels[1] | activated_channels[2] | spcm.CHANNEL0)
-            elif len(activated_channels) == 4:
-                self.channels = spcm.Channels(self.card, card_enable=activated_channels[0] | activated_channels[1] | activated_channels[2] | activated_channels[3])
-            elif len(activated_channels) == 5:
-                self.channels = spcm.Channels(self.card, card_enable=activated_channels[0] | activated_channels[1] | activated_channels[2] | activated_channels[3] | activated_channels[4] | activated_channels[5])
+            match len(activated_channels):
+                case 1: self.channels = spcm.Channels(self.card, card_enable=activated_channels[0])
+                case 2: self.channels = spcm.Channels(self.card, card_enable=activated_channels[0] | activated_channels[1])
+                case 3: self.channels = spcm.Channels(self.card, card_enable=activated_channels[0] | activated_channels[1] | activated_channels[2] | spcm.CHANNEL0)
+                case 4: self.channels = spcm.Channels(self.card, card_enable=activated_channels[0] | activated_channels[1] | activated_channels[2] | activated_channels[3])                
+                case 5: self.channels = spcm.Channels(self.card, card_enable=activated_channels[0] | activated_channels[1] | activated_channels[2] | activated_channels[3] | activated_channels[4] | activated_channels[5])
+                case _: print("INITIALIZATION ERROR : Cannot activate", len(activated_channels), "channels.")
+
 
             # Set Amplitude and Offset
             self.channels.amp(channel_amplitude * units.mV)
@@ -117,60 +115,31 @@ class Spectrum_Wrapper_Single:
                 chan.offset(channel_offset * units.mV, return_unit=units.mV)
                 chan.termination(0)
 
-            # --- Activate Triggering Channel Triggering
+            # --- Activate Triggering Triggering
             trigger = spcm.Trigger(self.card)
 
-            if trigger_settings["trigger_type"] == 'None':          # trigger set to none
-                # trigger.or_mask(spcm.SPC_TMASK_NONE)
-                trigger.or_mask(spcm.SPC_TMASK_SOFTWARE)  
-            elif trigger_settings["trigger_type"] == 'Software trigger':        # trigger set to software
-                trigger.or_mask(spcm.SPC_TMASK_SOFTWARE)  
-            elif trigger_settings["trigger_type"] == 'External analog trigger':     # trigger set to external analog
-                trigger.or_mask(spcm.SPC_TMASK_EXT0)  
-            elif trigger_settings['trigger_type'] == 'Channel trigger':  # trigger set channel
-                trigger.or_mask(spcm.SPC_TMASK_NONE)
-                if trigger_settings['trigger_channel'] == 'CH0':
-                    trigger.ch_or_mask0(spcm.SPC_TMASK0_CH0)
-                elif trigger_settings['trigger_channel'] == 'CH1':
-                    trigger.ch_or_mask0(spcm.SPC_TMASK0_CH1)
-                elif trigger_settings['trigger_channel'] == 'CH2':
-                    trigger.ch_or_mask0(spcm.SPC_TMASK0_CH2)
-                elif trigger_settings['trigger_channel'] == 'CH3':
-                    trigger.ch_or_mask0(spcm.SPC_TMASK0_CH3)
-                elif trigger_settings['trigger_channel'] == 'CH4':
-                    trigger.ch_or_mask0(spcm.SPC_TMASK0_CH4)
-                elif trigger_settings['trigger_channel'] == 'CH5':
-                    trigger.ch_or_mask0(spcm.SPC_TMASK0_CH5)
-                elif trigger_settings['trigger_channel'] == 'CH6':
-                    trigger.ch_or_mask0(spcm.SPC_TMASK0_CH6)
-                elif trigger_settings['trigger_channel'] == 'CH7':
-                    trigger.ch_or_mask0(spcm.SPC_TMASK0_CH7)
-                else: print("ERROR : unknown trigger Channel")
-            else : print("ERROR : unknown trigger type")
-
-            trigger.and_mask(spcm.SPC_TMASK_NONE)  # no AND mask
-
-            if trigger_settings['trigger_type'] == 'Channel trigger':
-                if trigger_settings['trigger_mode'] == 'Rising edge':
-                    trigger.ch_mode(self.channels[0], spcm.SPC_TM_POS)
-                elif trigger_settings['trigger_mode'] == 'Falling edge':
-                    trigger.ch_mode(self.channels[0], spcm.SPC_TM_NEG)
-                elif trigger_settings['trigger_mode'] == 'Both':
-                    trigger.ch_mode(self.channels[0], spcm.SPC_TM_BOTH)
-                else: print("ERROR : unknown triggering mode")
-
-                trigger.ch_level0(self.channels[0], trigger_settings['trigger_level'] * units.mV, return_unit=units.mV)
-            
-            elif trigger_settings['trigger_type'] == 'External analog trigger':
-                if trigger_settings['trigger_mode'] == 'Rising edge':
-                    trigger.ext0_mode(spcm.SPC_TM_POS)
-                elif trigger_settings['trigger_mode'] == 'Falling edge':
-                    trigger.ext0_mode(spcm.SPC_TM_NEG)
-                elif trigger_settings['trigger_mode'] == 'Both':
-                    trigger.ext0_mode(spcm.SPC_TM_BOTH)
-                else: print("ERROR : unknown triggering mode")
-
-                trigger.ext0_level0(trigger_settings['trigger_level'] * units.mV, return_unit=units.mV)
+            match trigger_settings["trigger_type"]:
+                case 'None': trigger.or_mask(spcm.SPC_TMASK_SOFTWARE)
+                case 'Software trigger': trigger.or_mask(spcm.SPC_TMASK_SOFTWARE)
+                case 'External analog trigger': 
+                    trigger.or_mask(spcm.SPC_TMASK_EXT0)
+                    match trigger_settings['trigger_mode']:
+                        case 'Rising edge': trigger.ext0_mode(spcm.SPC_TM_POS)  
+                        case 'Falling edge': trigger.ext0_mode(spcm.SPC_TM_NEG)
+                        case 'Both': trigger.ext0_mode(spcm.SPC_TM_BOTH) 
+                        case _: print("INITIALIZATION ERROR : unknown triggering mode")
+                case 'Channel trigger':
+                    trigger.or_mask(spcm.SPC_TMASK_NONE)
+                    dic = {'CH0':spcm.SPC_TMASK0_CH0, 'CH1':spcm.SPC_TMASK0_CH1, 'CH2':spcm.SPC_TMASK0_CH2, 'CH3':spcm.SPC_TMASK0_CH3, 'CH4':spcm.SPC_TMASK0_CH4, 'CH5':spcm.SPC_TMASK0_CH5, 'CH6':spcm.SPC_TMASK0_CH6, 'CH7':spcm.SPC_TMASK0_CH7 }
+                    trigger.ch_or_mask0( dic[trigger_settings['trigger_channel']] )
+                    # TODO: Right now only sets mode of first channel
+                    trigger.ext0_level0(trigger_settings['trigger_level'] * units.mV, return_unit=units.mV)
+                    match trigger_settings['trigger_mode']:
+                        case 'Rising edge': trigger.ch_mode(self.channels[0], spcm.SPC_TM_POS)  
+                        case 'Falling edge': trigger.ch_mode(self.channels[0], spcm.SPC_TM_NEG)
+                        case 'Both': trigger.ch_mode(self.channels[0], spcm.SPC_TM_BOTH) 
+                        case _: print("INITIALIZATION ERROR : unknown triggering mode")
+                case _: print("ERROR : unknown trigger type")
 
 
             initialized = True
@@ -243,7 +212,7 @@ def main():
 
     initialized = controller.initialise_device(clock_mode=             ["internal PLL", "external", "external reference"][0],
                                                     clock_frequency=        80,
-                                                    channels_to_activate=   [0,0,1,0],
+                                                    channels_to_activate=   [0,1,1,1],
                                                     # channels_to_activate=   [0,0,1,0,1,0,0,0],
                                                     channel_amplitude=      5000,
                                                     trigger_settings=       {"trigger_type":        [ "None", "Channel trigger", "Software trigger", "External analog trigger" ][0],
@@ -253,11 +222,11 @@ def main():
                                                     )
 
     data = controller.grab_trace()
-    # data= np.transpose(data)
-    # x = controller.get_the_x_axis()
-    # import matplotlib.pyplot as plt
-    # plt.plot(x, data)
-    # plt.show()
+    data= np.transpose(data)
+    x = controller.get_the_x_axis()
+    import matplotlib.pyplot as plt
+    plt.plot(x, data)
+    plt.show()
 
 if __name__=="__main__":
     main()
