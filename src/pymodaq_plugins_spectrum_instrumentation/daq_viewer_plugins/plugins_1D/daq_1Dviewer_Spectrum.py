@@ -22,6 +22,8 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
     """
 
     params = comon_parameters + [
+        {'title': 'Card Type', 'name':'card_type', 'type':'list', 'limits': [ "M2p.5936-x4", "M2p.5933-x4" ], "value":"M2p.5936-x4" },
+
         {'title': 'Aquisition Mode', 'name':'DAQ_mode', 'type':'list', 'limits': [ "Single", "Multi", "FIFO WIP" ], "value":"Multi" },
 
         {'title': 'Channels:', 'name': 'channels', 'type': 'group', 'children':[
@@ -77,6 +79,9 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
                 self.controller : Spectrum_Wrapper_Multi = None
             case _: print("Error, Wrapper Type Not Defined")
         
+
+        self.update_num_channels()
+
         self.x_axis = None
         self.card = None
         self.manager = None
@@ -174,6 +179,20 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
     def update_sampleRate(self):    self.settings.child('timing', 'sampleRate').setValue(       self.settings.child("timing", "Sample_per_Pulse").value() / (1/ (self.settings.child("timing", "PulseFreq").value() * 1e3) ) * 1e-6      )  # Points per Pulse / PulsePeriod, in MHz
     def update_NumSamples(self):    self.settings.child('timing', 'NumSamples').setValue(       self.settings.child("timing", "Num_Pulses").value() * self.settings.child("timing", "Sample_per_Pulse").value()                          )    # Num of Pulses * Samples per Pulse
     def update_Range(self):         self.settings.child('timing', 'Range').setValue(        self.settings.child('timing', 'NumSamples').value() / (self.settings.child('timing', 'sampleRate').value()*1e6) * 1e3     )  # NumPulse / sampleRate[MHz], in ms
+
+    def update_num_channels(self):
+        
+        match self.settings.child("card_type").value():
+            case "M2p.5936-x4": # Only has 4 channels
+                for chan_setting in self.settings.child("channels").children():
+                    if chan_setting.title() in ["CH4", "CH5", "CH6", "CH7"] : chan_setting.hide(); chan_setting.setValue(False)
+
+            case "M2p.5933-x4":
+                for chan_setting in self.settings.child("channels").children():
+                    if chan_setting.title() in ["CH4", "CH5", "CH6", "CH7"] : chan_setting.show()
+
+            case _: print("ERROR, Card type not recognised")
+
 
 
     def stop(self):
