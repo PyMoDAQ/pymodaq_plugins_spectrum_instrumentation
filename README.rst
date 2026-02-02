@@ -18,7 +18,8 @@ Instruments
 
 This package is related to the `Spectrum Instrumentation <https://spectrum-instrumentation.com/>`__ company.
 
-This plugin was created with a model M2p.5936-x4 .
+This plugin was created with a model M2p.5933-x4 .
+Also implemented for M2p.5936-x4 .
 
 Viewer1D
 ++++++++
