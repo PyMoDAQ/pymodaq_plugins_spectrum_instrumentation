@@ -49,7 +49,7 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
             ]},
 
         {'title': 'Trigger parameters', 'name': 'trig_params', 'type': 'group', 'children':[
-            {'title': 'Trigger:', 'name': 'triggerType', 'type':'list', 'limits': [ "None", "Channel trigger", "Software trigger", "External analog trigger" ], "value":"External analog trigger" },
+            {'title': 'Trigger:', 'name': 'triggerType', 'type':'list', 'limits': [ "None", "Channel trigger", "Software trigger", "External analog trigger" ], "value":"None" },
             {'title': 'Trigger channel:', 'name': 'triggerChannel', 'type':'list', 'limits': ["CH0", "CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7"], "value":"CH0", "visible":False },
             {'title': 'Trigger mode', 'name': 'triggerMode', 'type':'list', 'limits': [ "Rising edge", "Falling edge", "Both"], "value":"Rising edge" },
             {'title': 'Trigger level:', 'name': 'triggerLevel', 'type': 'slide', 'value': 100, 'default': 100, 'min': -500, 'max': 500, 'subtype': 'linear', 'suffix':'mV'},
@@ -57,7 +57,7 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
             ]},
 
         {'title': 'External reference clock parameters', 'name': 'clock_param', 'type': 'group', 'children': [
-            {'title': 'Clock mode:', 'name': 'clockMode', 'type':'list', 'limits': ["internal PLL", "external", "external reference"], "value":"external reference" },
+            {'title': 'Clock mode:', 'name': 'clockMode', 'type':'list', 'limits': ["internal PLL", "external", "external reference"], "value":"internal PLL" },
             {'title': 'External ref. clock rate:', 'name': 'ExtClock', 'type': 'int', 'value': 80, 'default': 80, 'suffix':'MHz'},
             {'title': 'Clock threshold', 'name': 'clock_th', 'type': 'float', 'value': 1.5, 'default': 1.5, 'suffix':'V'},
             ], 'expanded': False},

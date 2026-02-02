@@ -63,7 +63,7 @@ class Spectrum_Wrapper_Single:
 
             # --- Choose Mode
             self.card.card_mode(spcm.SPC_REC_STD_SINGLE)  # single trigger standard mode
-            self.card.timeout(50 * units.s)  # timeout 50 s
+            self.card.timeout(5 * units.s)  # timeout 50 s
 
             # --- Setup External Clock
             clock = spcm.Clock(self.card)
@@ -86,7 +86,7 @@ class Spectrum_Wrapper_Single:
             # --- Activate Channels
             activated_channels = []
 
-            for ii in range(8):
+            for ii in range( len(channels_to_activate) ):
                 if channels_to_activate[ii] == True:
                     self.activated_str.append('CH'+str(ii))
                     match ii:
@@ -105,7 +105,7 @@ class Spectrum_Wrapper_Single:
             elif len(activated_channels) == 2:
                 self.channels = spcm.Channels(self.card, card_enable=activated_channels[0] | activated_channels[1])
             elif len(activated_channels) == 3:
-                self.channels = spcm.Channels(self.card, card_enable=activated_channels[0] | activated_channels[1] | activated_channels[2] | spcm.CHANNEL7)
+                self.channels = spcm.Channels(self.card, card_enable=activated_channels[0] | activated_channels[1] | activated_channels[2] | spcm.CHANNEL0)
             elif len(activated_channels) == 4:
                 self.channels = spcm.Channels(self.card, card_enable=activated_channels[0] | activated_channels[1] | activated_channels[2] | activated_channels[3])
             elif len(activated_channels) == 5:
@@ -113,15 +113,16 @@ class Spectrum_Wrapper_Single:
 
             # Set Amplitude and Offset
             self.channels.amp(channel_amplitude * units.mV)
-            self.channels[0].offset(channel_offset * units.mV, return_unit=units.mV)
-            self.channels.termination(0)     # Set termination to 500MOhm ?
+            for chan in self.channels:
+                chan.offset(channel_offset * units.mV, return_unit=units.mV)
+                chan.termination(0)
 
             # --- Activate Triggering Channel Triggering
             trigger = spcm.Trigger(self.card)
 
             if trigger_settings["trigger_type"] == 'None':          # trigger set to none
-                trigger.or_mask(spcm.SPC_TMASK_NONE)  
-                trigger.ch_or_mask0(self.channels[0].ch_mask())
+                # trigger.or_mask(spcm.SPC_TMASK_NONE)
+                trigger.or_mask(spcm.SPC_TMASK_SOFTWARE)  
             elif trigger_settings["trigger_type"] == 'Software trigger':        # trigger set to software
                 trigger.or_mask(spcm.SPC_TMASK_SOFTWARE)  
             elif trigger_settings["trigger_type"] == 'External analog trigger':     # trigger set to external analog
@@ -175,9 +176,15 @@ class Spectrum_Wrapper_Single:
             initialized = True
 
         except Exception as e:
+            import os
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            print(" -- ERROR IN INITIALIZATION : ")
+            print("Error Type : ", e)
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(exc_type, "in", fname, "at line", exc_tb.tb_lineno)
+            print("--")
+
             hit_except = True
-            print("EXIT WITH ERROR : ")
-            print(e)
             initialized = False
 
  
@@ -230,15 +237,27 @@ class Spectrum_Wrapper_Single:
 
 
 def main():
-    controller = Spectrum_Wrapper_Single(duration = 50,
-                                         sample_rate= 0.2)
-    
-    init = controller.initialise_device(trigger_settings= {"trigger_type":"External analog trigger", "trigger_channel":"CH0", "trigger_mode":"Rising edge", "trigger_level":5000})
-    data = np.transpose( controller.grab_trace() )
-    x = controller.get_the_x_axis()
-    import matplotlib.pyplot as plt
-    plt.plot(x, data)
-    plt.show()
+
+    controller = Spectrum_Wrapper_Single(duration=     10, 
+                                        sample_rate=   0.2)
+
+    initialized = controller.initialise_device(clock_mode=             ["internal PLL", "external", "external reference"][0],
+                                                    clock_frequency=        80,
+                                                    channels_to_activate=   [0,0,1,0],
+                                                    # channels_to_activate=   [0,0,1,0,1,0,0,0],
+                                                    channel_amplitude=      5000,
+                                                    trigger_settings=       {"trigger_type":        [ "None", "Channel trigger", "Software trigger", "External analog trigger" ][0],
+                                                                                "trigger_channel":  ["CH0", "CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7"][0],
+                                                                                "trigger_mode":     [ "Rising edge", "Falling edge", "Both"][0],
+                                                                                "trigger_level":    100}
+                                                    )
+
+    data = controller.grab_trace()
+    # data= np.transpose(data)
+    # x = controller.get_the_x_axis()
+    # import matplotlib.pyplot as plt
+    # plt.plot(x, data)
+    # plt.show()
 
 if __name__=="__main__":
     main()
