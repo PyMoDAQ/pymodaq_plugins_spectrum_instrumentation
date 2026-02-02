@@ -197,7 +197,6 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
 
     def stop(self):
         """Stop the current grab hardware wise if necessary"""
-        self.controller.terminate_the_communication()
         return ''
 
 
