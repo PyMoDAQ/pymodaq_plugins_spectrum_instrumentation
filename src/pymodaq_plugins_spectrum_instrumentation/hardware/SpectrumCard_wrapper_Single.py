@@ -200,8 +200,15 @@ class Spectrum_Wrapper_Single:
                 raise
 
 
-
-
+    def get_device_info(self, print_info=False):
+        info = { 
+                "Product Name" : self.card.product_name(),
+                "Serial Number": self.card.sn()
+                }
+        if print_info:
+            for prop in info.keys():
+                print(prop, " - ", info[prop])
+        return info
 
 
 
@@ -221,12 +228,8 @@ def main():
                                                                                 "trigger_level":    100}
                                                     )
 
-    data = controller.grab_trace()
-    data= np.transpose(data)
-    x = controller.get_the_x_axis()
-    import matplotlib.pyplot as plt
-    plt.plot(x, data)
-    plt.show()
+    controller.get_device_info(True)
+
 
 if __name__=="__main__":
     main()
