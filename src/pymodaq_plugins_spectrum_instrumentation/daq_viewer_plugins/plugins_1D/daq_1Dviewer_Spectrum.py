@@ -22,7 +22,7 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
     """
 
     params = comon_parameters + [
-        {'title': 'Card Type', 'name':'card_type', 'type':'list', 'limits': [ "M2p.5936-x4", "M2p.5933-x4" ], "value":"M2p.5936-x4" },
+        {'title': 'Card Type', 'name':'card_type', 'type':'list', 'limits': [ "M2p.5936-x4", "M2p.5933-x4" ], "value":"M2p.5933-x4" },
 
         {'title': 'Aquisition Mode', 'name':'DAQ_mode', 'type':'list', 'limits': [ "Single", "Multi", "FIFO WIP" ], "value":"Multi" },
 
