@@ -22,9 +22,9 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
     """
 
     params = comon_parameters + [
-        {'title': 'Card Type', 'name':'card_type', 'type':'list', 'limits': [ "M2p.5936-x4", "M2p.5933-x4" ], "value":"M2p.5933-x4" },
+        {'title': 'Card Type', 'name':'card_type', 'type':'list', 'limits': [ "M2p.5936-x4", "M2p.5933-x4" ], "value":"M2p.5936-x4" },
 
-        {'title': 'Aquisition Mode', 'name':'DAQ_mode', 'type':'list', 'limits': [ "Single", "Multi", "FIFO WIP" ], "value":"Multi" },
+        {'title': 'Aquisition Mode', 'name':'DAQ_mode', 'type':'list', 'limits': [ "Single", "Multi", "FIFO WIP" ], "value":"Single" },
 
         {'title': 'Channels:', 'name': 'channels', 'type': 'group', 'children':[
             {'title': 'CH0', 'name': 'c0', 'type': 'led_push', 'value': False, 'default': False},
@@ -80,7 +80,7 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
             case _: print("Error, Wrapper Type Not Defined")
         
 
-        self.update_num_channels()
+        self.update_card_type_parameters()
 
         self.x_axis = None
         self.card = None
@@ -126,17 +126,28 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
             self.controller = self.wrapper(duration=   self.settings.child("timing", "Range").value(), 
                                                       sample_rate=   self.settings.child("timing", "sampleRate").value())
 
-            initialized = self.controller.initialise_device(clock_mode=             self.settings.child("clock_param", "clockMode").value(),
-                                                            clock_frequency=        self.settings.child("clock_param", "ExtClock").value(),
-                                                            channels_to_activate=   [ self.settings.child("channels", f"c{ii}").value() for ii in range(8)],
-                                                            channel_amplitude=      self.settings.child("channels", "Amp").value(),
-                                                            channel_offset=         self.settings.child("channels", "Offset").value(),
-                                                            trigger_settings=       {"trigger_type":    self.settings.child("trig_params", "triggerType").value(),
-                                                                                     "trigger_channel": self.settings.child("trig_params", "triggerChannel").value(),
-                                                                                     "trigger_mode":    self.settings.child("trig_params", "triggerMode").value(),
-                                                                                     "trigger_level":   self.settings.child("trig_params", "triggerLevel").value()}
-                                                            )
+            actual_card_type = self.controller.get_device_info()["Product Name"]
+            if actual_card_type == self.settings.child("card_type").value():
+                initialized = self.controller.initialise_device(clock_mode=             self.settings.child("clock_param", "clockMode").value(),
+                                                                clock_frequency=        self.settings.child("clock_param", "ExtClock").value(),
+                                                                channels_to_activate=   [ self.settings.child("channels", f"c{ii}").value() for ii in range(8)],
+                                                                channel_amplitude=      self.settings.child("channels", "Amp").value(),
+                                                                channel_offset=         self.settings.child("channels", "Offset").value(),
+                                                                trigger_settings=       {"trigger_type":    self.settings.child("trig_params", "triggerType").value(),
+                                                                                        "trigger_channel": self.settings.child("trig_params", "triggerChannel").value(),
+                                                                                        "trigger_mode":    self.settings.child("trig_params", "triggerMode").value(),
+                                                                                        "trigger_level":   self.settings.child("trig_params", "triggerLevel").value()}
+                                                                )
 
+            else:
+                self.settings.child("card_type").setValue( actual_card_type ) 
+                print("Changed card type to", actual_card_type)
+                self.update_card_type_parameters()
+                self.controller.terminate_the_communication()
+                info = "Required Card type doesn't match observed card type"
+                initialized = False
+
+                
 
 
         else:
@@ -144,8 +155,11 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
             initialized = True
 
         
-        info = "Initialized"
-        return info, initialized
+        if initialized:
+            info = "Initialized"
+            return info, initialized
+        else:
+            return info, initialized
 
 
     def close(self):
@@ -180,8 +194,9 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
     def update_NumSamples(self):    self.settings.child('timing', 'NumSamples').setValue(       self.settings.child("timing", "Num_Pulses").value() * self.settings.child("timing", "Sample_per_Pulse").value()                          )    # Num of Pulses * Samples per Pulse
     def update_Range(self):         self.settings.child('timing', 'Range').setValue(        self.settings.child('timing', 'NumSamples').value() / (self.settings.child('timing', 'sampleRate').value()*1e6) * 1e3     )  # NumPulse / sampleRate[MHz], in ms
 
-    def update_num_channels(self):
-        
+
+
+    def update_card_type_parameters(self):
         match self.settings.child("card_type").value():
             case "M2p.5936-x4": # Only has 4 channels
                 for chan_setting in self.settings.child("channels").children():
@@ -191,13 +206,14 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
                 for chan_setting in self.settings.child("channels").children():
                     if chan_setting.title() in ["CH4", "CH5", "CH6", "CH7"] : chan_setting.show()
 
-            case _: print("ERROR, Card type not recognised")
+            case _: print("ERROR, Card type not recognised")  
 
 
 
     def stop(self):
         """Stop the current grab hardware wise if necessary"""
         return ''
+
 
 
 

@@ -25,7 +25,18 @@ class Spectrum_Wrapper_Single:
         self.sample_rate = sample_rate
         self.activated_str = []
         self.data_transfer=None
-    
+
+        try:
+            manager = spcm.Card('/dev/spcm0')
+            enter = type(manager).__enter__
+            exit = type(manager).__exit__
+            value = enter(manager)
+            hit_except = False
+            self.card = value
+        except:
+            print(" -- ERROR IN OPENING CARD : ")
+
+
 
     def initialise_device(self, clock_mode : str = "external reference", clock_frequency : float = 80, channels_to_activate : list[bool] = [0,0,1,0,1,0,0,0], channel_amplitude : int = 5000, channel_offset : int = 0, trigger_settings : dict = {"trigger_type":"None", "trigger_channel":"CH0", "trigger_mode":"Rising edge", "trigger_level":5000}) -> bool:
         """
@@ -51,15 +62,8 @@ class Spectrum_Wrapper_Single:
         print("Number of Samples = ", Num_Samples)
         print("Sampling Frequency = ", round(self.sample_rate,5), "MHz")
 
-        manager = spcm.Card('/dev/spcm0')
-        enter = type(manager).__enter__
-        exit = type(manager).__exit__
-        value = enter(manager)
-        hit_except = False
-
 
         try:
-            self.card = value
 
             # --- Choose Mode
             self.card.card_mode(spcm.SPC_REC_STD_SINGLE)  # single trigger standard mode
@@ -209,6 +213,8 @@ class Spectrum_Wrapper_Single:
             for prop in info.keys():
                 print(prop, " - ", info[prop])
         return info
+
+
 
 
 
