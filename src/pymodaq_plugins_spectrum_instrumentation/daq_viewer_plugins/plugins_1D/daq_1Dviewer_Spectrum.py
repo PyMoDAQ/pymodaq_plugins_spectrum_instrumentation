@@ -24,7 +24,7 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
     params = comon_parameters + [
         {'title': 'Card Type', 'name':'card_type', 'type':'list', 'limits': [ "M2p.5936-x4", "M2p.5933-x4" ], "value":"M2p.5936-x4" },
 
-        {'title': 'Aquisition Mode', 'name':'DAQ_mode', 'type':'list', 'limits': [ "Single", "Multi", "FIFO WIP" ], "value":"Single" },
+        {'title': 'Aquisition Mode', 'name':'DAQ_mode', 'type':'list', 'limits': [ "Single", "Multi", "FIFO WIP" ], "value":"Multi" },
 
         {'title': 'Channels:', 'name': 'channels', 'type': 'group', 'children':[
             {'title': 'CH0', 'name': 'c0', 'type': 'led_push', 'value': False, 'default': False},
@@ -69,6 +69,8 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
         """ 
         Called at initialisation of the Daq View
         """
+
+        # --- Choose Wrapper Type based on aquisition mode
         self.wrapper = None
         match self.settings.child("DAQ_mode").value():
             case "Single": 
@@ -78,9 +80,12 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
                 self.wrapper = Spectrum_Wrapper_Multi
                 self.controller : Spectrum_Wrapper_Multi = None
             case _: print("Error, Wrapper Type Not Defined")
-        
 
+        # --- Update parameters based on the card type
         self.update_card_type_parameters()
+
+        # --- Init all readonly values
+        self.update_readonly_parameters()
 
         self.x_axis = None
         self.card = None
@@ -89,10 +94,6 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
         self.trigger = None
         self.clock = None
 
-        # --- Init all readonly values
-        self.update_sampleRate()
-        self.update_NumSamples()
-        self.update_Range()
 
 
     def commit_settings(self, param: Parameter):
@@ -107,11 +108,9 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
         
 
         elif param.name() == "Num_Pulses" or param.name() == "Sample_per_Pulse":
-            self.update_NumSamples()
-            self.update_Range()
-            self.update_sampleRate()
+            self.update_readonly_parameters()
 
-            # self.controller.update()  # TODO
+
         elif param.name() == "triggerType":
             if param.value()=="Channel trigger": self.settings.child("trig_params", "triggerChannel").show()
             else : self.settings.child("trig_params", "triggerChannel").hide()
@@ -123,11 +122,14 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
         """
 
         if self.is_master:
+            # --- Connect to the card
             self.controller = self.wrapper(duration=   self.settings.child("timing", "Range").value(), 
                                                       sample_rate=   self.settings.child("timing", "sampleRate").value())
 
+            # --- Check if the Card corresponds to demanded Card type
             actual_card_type = self.controller.get_device_info()["Product Name"]
             if actual_card_type == self.settings.child("card_type").value():
+                # Initiallise with all card parameters
                 initialized = self.controller.initialise_device(clock_mode=             self.settings.child("clock_param", "clockMode").value(),
                                                                 clock_frequency=        self.settings.child("clock_param", "ExtClock").value(),
                                                                 channels_to_activate=   [ self.settings.child("channels", f"c{ii}").value() for ii in range(8)],
@@ -139,27 +141,33 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
                                                                                         "trigger_level":   self.settings.child("trig_params", "triggerLevel").value()}
                                                                 )
 
-            else:
-                self.settings.child("card_type").setValue( actual_card_type ) 
-                print("Changed card type to", actual_card_type)
-                self.update_card_type_parameters()
-                self.controller.terminate_the_communication()
-                info = "Required Card type doesn't match observed card type"
+                info = f"Initialized card {actual_card_type}"
+                initialized = True
+            #  --- If not, check if valid card type, update parameters
+            else:   
+                print(type(self.settings.child("card_type")))
+                if actual_card_type not in self.settings.child("card_type").opts['limits'] :
+                    info = "Card type is not implemented ! "
+
+                    print(info)
+                    self.emit_status(ThreadCommand('Update_Status', [info]))
+                else:
+                    self.settings.child("card_type").setValue( actual_card_type ) 
+                    self.update_card_type_parameters()
+                    self.controller.terminate_the_communication(self.manager, self.hit_except)
+                    info = f'Card Type Changed to {actual_card_type}'
+                    
+                    print(info)
+                    self.emit_status(ThreadCommand('Update_Status', [info]))
+
                 initialized = False
-
-                
-
 
         else:
             self.controller = controller
             initialized = True
 
-        
-        if initialized:
-            info = "Initialized"
-            return info, initialized
-        else:
-            return info, initialized
+
+        return info, initialized
 
 
     def close(self):
@@ -190,9 +198,10 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
         self.dte_signal.emit(data)
 
 
-    def update_sampleRate(self):    self.settings.child('timing', 'sampleRate').setValue(       self.settings.child("timing", "Sample_per_Pulse").value() / (1/ (self.settings.child("timing", "PulseFreq").value() * 1e3) ) * 1e-6      )  # Points per Pulse / PulsePeriod, in MHz
-    def update_NumSamples(self):    self.settings.child('timing', 'NumSamples').setValue(       self.settings.child("timing", "Num_Pulses").value() * self.settings.child("timing", "Sample_per_Pulse").value()                          )    # Num of Pulses * Samples per Pulse
-    def update_Range(self):         self.settings.child('timing', 'Range').setValue(        self.settings.child('timing', 'NumSamples').value() / (self.settings.child('timing', 'sampleRate').value()*1e6) * 1e3     )  # NumPulse / sampleRate[MHz], in ms
+    def update_readonly_parameters(self):
+        self.settings.child('timing', 'sampleRate').setValue(       self.settings.child("timing", "Sample_per_Pulse").value() / (1/ (self.settings.child("timing", "PulseFreq").value() * 1e3) ) * 1e-6      )  # Points per Pulse / PulsePeriod, in MHz
+        self.settings.child('timing', 'NumSamples').setValue(       self.settings.child("timing", "Num_Pulses").value() * self.settings.child("timing", "Sample_per_Pulse").value()                          )    # Num of Pulses * Samples per Pulse
+        self.settings.child('timing', 'Range').setValue(        self.settings.child('timing', 'NumSamples').value() / (self.settings.child('timing', 'sampleRate').value()*1e6) * 1e3     )  # NumPulse / sampleRate[MHz], in ms
 
 
 

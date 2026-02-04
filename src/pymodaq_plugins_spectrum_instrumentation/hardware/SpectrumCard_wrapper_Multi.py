@@ -11,21 +11,11 @@ from spcm.classes_unit_conversion import UnitConversion
 import sys
 import numpy as np
 
-class Spectrum_Wrapper_Multi:
+from pymodaq_plugins_spectrum_instrumentation.hardware.SpectrumCard_wrapper_Single import Spectrum_Wrapper_Single
 
-    def __init__(self, duration : float, sample_rate : float):
-        """
-        Initialise class
-        Input : 
-            - Duration : int [ms]
-            - sample_rate : float [MHz]
-        """
-        self.card = None
-        self.channels = None
-        self.duration = duration
-        self.sample_rate = sample_rate
-        self.activated_str = []
-        self.data_transfer = None
+
+
+class Spectrum_Wrapper_Multi(Spectrum_Wrapper_Single):
     
 
     def initialise_device(self, clock_mode : str = "external reference", clock_frequency : float = 80, channels_to_activate : list[bool] = [0,0,1,0,1,0,0,0], channel_amplitude : int = 5000, channel_offset : int = 0, trigger_settings : dict = {"trigger_type":"None", "trigger_channel":"CH0", "trigger_mode":"Rising edge", "trigger_level":5000}) -> bool:
@@ -52,15 +42,7 @@ class Spectrum_Wrapper_Multi:
         print("Number of Samples = ", Num_Samples)
         print("Sampling Frequency = ", round(self.sample_rate,5), "MHz")
 
-        manager = spcm.Card('/dev/spcm0')
-        enter = type(manager).__enter__
-        exit = type(manager).__exit__
-        value = enter(manager)
-        hit_except = False
-
-
         try:
-            self.card = value
 
             # --- Choose Mode
             self.card.card_mode(spcm.SPC_REC_STD_MULTI)  # Multi Mode
@@ -192,9 +174,8 @@ class Spectrum_Wrapper_Multi:
             post_trigger = num_samples-8
             self.data_transfer.post_trigger(post_trigger) # Post trigger seems to need to be a multiple of 8, and be bigger than Num_Sample * 3/5
 
-
-
             initialized = True
+
 
         except Exception as e:
             import os
@@ -211,7 +192,6 @@ class Spectrum_Wrapper_Multi:
  
 
         return initialized
-
 
 
 
@@ -240,17 +220,6 @@ class Spectrum_Wrapper_Multi:
         res = (n//8+1) * 8  # For now just take the next 8 multiple
         return res
 
-    def terminate_the_communication(self, manager, hit_except):
-        try:
-            print('Communication terminated')
-            self.card.close()
-
-        except:
-            hit_except = True
-            if not exit(manager, *sys.exc_info()):
-                raise
-
-
 
 
 
@@ -269,10 +238,10 @@ def main():
                                                                                 "trigger_level":    100}
                                                     )
 
+    controller.get_device_info(print_info=True)
+
     data = controller.grab_trace()
     x = controller.get_the_x_axis()*1e3
-    print(data[0].shape)
-    print(x[-1])
 
     import matplotlib.pyplot as plt
     plt.plot(x, data[0])

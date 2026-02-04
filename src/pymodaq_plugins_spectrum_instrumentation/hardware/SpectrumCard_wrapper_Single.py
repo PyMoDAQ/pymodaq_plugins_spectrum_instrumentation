@@ -170,6 +170,7 @@ class Spectrum_Wrapper_Single:
     def get_the_x_axis(self): 
         return self.data_transfer.time_data().magnitude - self.data_transfer.time_data().magnitude[0]   # Add offset otherwise trigger makes trace start in the negatives
 
+
     def grab_trace(self, post_trig_ms : float = 0):
 
         # --- Define the data buffer
