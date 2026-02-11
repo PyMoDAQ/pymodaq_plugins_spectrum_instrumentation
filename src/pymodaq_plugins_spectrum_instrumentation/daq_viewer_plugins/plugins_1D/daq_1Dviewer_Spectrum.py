@@ -39,7 +39,7 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
             {'title': 'Offset:','name': 'Offset','type': 'float','value': 0, 'default': 0, 'suffix':'mV'},
             ], 'expanded': False},
 
-        {'title': 'Timing', 'name': 'timing', 'type': 'group', 'children': [
+        {'title': 'Acquisition Parameters', 'name': 'timing', 'type': 'group', 'children': [
             {'title': 'Nbr. of laser pulses:', 'name': 'Num_Pulses', 'type': 'int', 'value': 200, 'default': 200, 'children':[
                 {'title': 'Laser pulses freq. :', 'name': 'PulseFreq', 'type': 'int', 'value': 1, 'default': 1, 'readonly' : True, 'suffix':'kHz [Read Only]'},
             ], 'expanded': False},
@@ -52,9 +52,9 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
         {'title': 'Trigger parameters', 'name': 'trig_params', 'type': 'group', 'children':[
             {'title': 'Trigger:', 'name': 'triggerType', 'type':'list', 'limits': [ "None", "Channel trigger", "Software trigger", "External analog trigger" ], "value":"None" },
             {'title': 'Trigger channel:', 'name': 'triggerChannel', 'type':'list', 'limits': ["CH0", "CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7"], "value":"CH0", "visible":False },
-            {'title': 'Trigger mode', 'name': 'triggerMode', 'type':'list', 'limits': [ "Rising edge", "Falling edge", "Both"], "value":"Rising edge" },
-            {'title': 'Trigger level:', 'name': 'triggerLevel', 'type': 'slide', 'value': 100, 'default': 100, 'min': -500, 'max': 500, 'subtype': 'linear', 'suffix':'mV'},
-            {'title': 'Pre-Trig:', 'name': 'preTrig', 'type': 'slide', 'value': 80, 'default': 80, 'min': 0, 'max': 100, 'subtype': 'linear', 'suffix':'%'},
+            {'title': 'Trigger mode', 'name': 'triggerMode', 'type':'list', 'limits': [ "Rising edge", "Falling edge", "Both"], "value":"Rising edge", "visible":False },
+            {'title': 'Trigger level:', 'name': 'triggerLevel', 'type': 'slide', 'value': 100, 'default': 100, 'min': -500, 'max': 500, 'subtype': 'linear', 'suffix':'mV', "visible":False},
+            {'title': 'Pre-Trig:', 'name': 'preTrig', 'type': 'slide', 'value': 80, 'default': 80, 'min': 0, 'max': 100, 'subtype': 'linear', 'suffix':'%', "visible":False},
             ]},
 
         {'title': 'External reference clock parameters', 'name': 'clock_param', 'type': 'group', 'children': [
@@ -113,6 +113,7 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
 
 
         elif param.name() == "triggerType":
+            self.update_trigger_parameter_visibility()
             if param.value()=="Channel trigger": self.settings.child("trig_params", "triggerChannel").show()
             else : self.settings.child("trig_params", "triggerChannel").hide()
 
@@ -225,6 +226,18 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
         return ''
 
 
+    def update_trigger_parameter_visibility(self):
+        trigger_type = self.settings.child("trig_params", "triggerType").value()
+        visibility = {
+            'None'                      :   {'triggerChannel':False, 'triggerMode':False, 'triggerLevel':False, 'preTrig':False},
+            "Channel trigger"           :   {'triggerChannel':True , 'triggerMode':True , 'triggerLevel':True , 'preTrig':True },
+            "Software trigger"          :   {'triggerChannel':False, 'triggerMode':True , 'triggerLevel':True , 'preTrig':True },
+            "External analog trigger"   :   {'triggerChannel':False, 'triggerMode':True , 'triggerLevel':True , 'preTrig':True },
+        }
+
+        for param in visibility['None'].keys():
+            self.settings.child("trig_params", param).show(visibility[trigger_type][param])
+
 
 
 
@@ -232,4 +245,5 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
 
 if __name__ == "__main__":
     main(__file__)
-    
+
+
