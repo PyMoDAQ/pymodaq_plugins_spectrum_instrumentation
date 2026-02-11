@@ -37,10 +37,13 @@ class Spectrum_Wrapper_Multi(Spectrum_Wrapper_Single):
         
         # --- Determine Some Properties
         Num_Samples = int( (self.duration*1e-3) * (self.sample_rate*1e6) )                 # Total Number of Samples
-        print("\n--- Initializing SPCM Card --- Mode : Multi")
+        print("\n========== Initializing SPCM Card ========== " )
+        print(" ----- Mode : Multi")
         print("Duration = ", round(self.duration,5), "ms")
         print("Number of Samples = ", Num_Samples)
         print("Sampling Frequency = ", round(self.sample_rate,5), "MHz")
+        print(  "============================================" )
+
 
         try:
 
@@ -162,7 +165,7 @@ class Spectrum_Wrapper_Multi(Spectrum_Wrapper_Single):
             num_segments = 1
             num_samples = num_segments * samples_per_segment
 
-            print("Samples per Segment = ", samples_per_segment)
+            # print("Samples per Segment = ", samples_per_segment)
 
 
             self.data_transfer = spcm.Multi(self.card)

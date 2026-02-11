@@ -62,7 +62,7 @@ class Spectrum_Wrapper_Single:
         print("Duration = ", round(self.duration,5), "ms")
         print("Number of Samples = ", Num_Samples)
         print("Sampling Frequency = ", round(self.sample_rate,5), "MHz")
-
+        print(  "============================================" )
 
         try:
 
