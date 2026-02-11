@@ -30,8 +30,8 @@ class DAQ_1DViewer_Spectrum_Lockin(DAQ_1DViewer_Spectrum):
             {'title': 'Lock In freq.:', 'name': 'LI_PulseFreq', 'type': 'int', 'value': 500, 'default': 500, 'suffix':'Hz'},
             {'title': 'Subtract background', 'name': 'BG_sub', 'type': 'bool', 'value': True, 'default': True},
             {'title': 'Background Proportion', 'name': 'BG_prop', 'type': 'slide', 'value': 70, 'default': 70, 'min': 0, 'max': 100, 'subtype': 'linear', 'suffix':'%'},
-            {'title': 'PD gain: (read only) ', 'name': 'Gain', 'type': 'float', 'value': 10, 'default': 10, 'readonly': True},
-            {'title': 'Conversion factor: (read only) ', 'name': 'Conversion', 'type': 'float', 'value': 2, 'default': 2, 'readonly': True},
+            {'title': 'PD gain :', 'name': 'Gain', 'type': 'float', 'value': 10, 'default': 10, 'readonly': True, 'suffix':' [Read Only]'},
+            {'title': 'Conversion factor :', 'name': 'Conversion', 'type': 'float', 'value': 2, 'default': 2, 'readonly': True, 'suffix':' [Read Only]'},
 
             {'title': 'Plotting & Saving', 'name': 'PlotSave', 'type': 'group', 'children': [
                 {'title': 'Show trace', 'name': 'Trace', 'type': 'led_push', 'value': True, 'default': True},
