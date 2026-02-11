@@ -57,7 +57,8 @@ class Spectrum_Wrapper_Single:
         
         # --- Determine Some Properties
         Num_Samples = int( (self.duration*1e-3) * (self.sample_rate*1e6) )                 # Total Number of Samples
-        print("\n--- Initializing SPCM Card --- Mode : Single")
+        print("\n========== Initializing SPCM Card ========== " )
+        print(" ----- Mode : Single")
         print("Duration = ", round(self.duration,5), "ms")
         print("Number of Samples = ", Num_Samples)
         print("Sampling Frequency = ", round(self.sample_rate,5), "MHz")

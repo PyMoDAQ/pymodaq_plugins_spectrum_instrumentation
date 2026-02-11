@@ -40,12 +40,13 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
             ], 'expanded': False},
 
         {'title': 'Timing', 'name': 'timing', 'type': 'group', 'children': [
-            {'title': 'Nbr. of laser pulses:', 'name': 'Num_Pulses', 'type': 'int', 'value': 200, 'default': 200},
+            {'title': 'Nbr. of laser pulses:', 'name': 'Num_Pulses', 'type': 'int', 'value': 200, 'default': 200, 'children':[
+                {'title': 'Laser pulses freq. :', 'name': 'PulseFreq', 'type': 'int', 'value': 1, 'default': 1, 'readonly' : True, 'suffix':'kHz [Read Only]'},
+            ], 'expanded': False},
             {'title': 'Nbr. of samples per laser pulse:', 'name': 'Sample_per_Pulse', 'type': 'int', 'value': 200, 'default': 200},
-            {'title': 'Sample rate (read only) :', 'name': 'sampleRate', 'type': 'float', 'value': 0.2, 'default': 0.2, 'readonly' : True, 'suffix':'MHz'},
-            {'title': 'Number of samples (read only) :', 'name': 'NumSamples', 'type': 'int', 'value': 40000, 'default': 40000, 'readonly' : True, 'suffix':'S'},
-            {'title': 'Time range (read only) :', 'name': 'Range', 'type': 'float', 'value': 200, 'default': 200, 'readonly': True, 'suffix':'ms'},
-            {'title': 'Laser pulses freq. (read only) :', 'name': 'PulseFreq', 'type': 'int', 'value': 1, 'default': 1, 'readonly' : True, 'suffix':'kHz'},
+            {'title': 'Sample rate :', 'name': 'sampleRate', 'type': 'float', 'value': 0.2, 'default': 0.2, 'readonly' : True, 'suffix':'MHz [Read Only]'},
+            {'title': 'Time range :', 'name': 'Range', 'type': 'float', 'value': 200, 'default': 200, 'readonly': True, 'suffix':'ms [Read Only]'},
+            {'title': 'Number of samples :', 'name': 'NumSamples', 'type': 'int', 'value': 40000, 'default': 40000, 'readonly' : True, 'suffix':'S [Read Only]'},
             ]},
 
         {'title': 'Trigger parameters', 'name': 'trig_params', 'type': 'group', 'children':[
@@ -199,7 +200,7 @@ class DAQ_1DViewer_Spectrum(DAQ_Viewer_base):
 
 
     def update_readonly_parameters(self):
-        self.settings.child('timing', 'sampleRate').setValue(       self.settings.child("timing", "Sample_per_Pulse").value() / (1/ (self.settings.child("timing", "PulseFreq").value() * 1e3) ) * 1e-6      )  # Points per Pulse / PulsePeriod, in MHz
+        self.settings.child('timing', 'sampleRate').setValue(       self.settings.child("timing", "Sample_per_Pulse").value() / (1/ (self.settings.child("timing", "Num_Pulses", "PulseFreq").value() * 1e3) ) * 1e-6      )  # Points per Pulse / PulsePeriod, in MHz
         self.settings.child('timing', 'NumSamples').setValue(       self.settings.child("timing", "Num_Pulses").value() * self.settings.child("timing", "Sample_per_Pulse").value()                          )    # Num of Pulses * Samples per Pulse
         self.settings.child('timing', 'Range').setValue(        self.settings.child('timing', 'NumSamples').value() / (self.settings.child('timing', 'sampleRate').value()*1e6) * 1e3     )  # NumPulse / sampleRate[MHz], in ms
 
