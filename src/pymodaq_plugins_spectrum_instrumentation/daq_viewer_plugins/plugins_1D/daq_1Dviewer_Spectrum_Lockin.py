@@ -56,6 +56,8 @@ class DAQ_1DViewer_Spectrum_Lockin(DAQ_1DViewer_Spectrum):
     def __init__(self, parent=None, params_state=None):
         super().__init__(parent, params_state)
 
+
+
         # --- Calculate some Lock In Parameters
         self.LI_pulseFreq = self.settings.child('lock_in', 'LI_PulseFreq').value()*2 *1e-3   # kHz
         self.num_pulses = self.settings.child('timing', 'Num_Pulses').value()
@@ -68,13 +70,6 @@ class DAQ_1DViewer_Spectrum_Lockin(DAQ_1DViewer_Spectrum):
         chan_str = [param.title() for param in self.settings.child("channels").children() if param.type()=="led_push" and param.value()]
         self.settings.child('lock_in', 'diffChannel').setLimits( chan_str )
         self.settings.child('lock_in', 'sumChannel').setLimits( chan_str )
-
-        print("\n--- Lock In Info")
-        print(f"Number of Pulses = {self.num_pulses}")
-        print(f"Number of LI periods = {self.num_LI_period}") 
-        print(f"Points per pulse = {self.points_per_pulse}")
-        print(f"Pulse Per LI Period = {self.pulse_per_LI_Period}")
-
 
     def commit_settings(self, param):
         super().commit_settings(param)
@@ -139,8 +134,8 @@ class DAQ_1DViewer_Spectrum_Lockin(DAQ_1DViewer_Spectrum):
             # data_to_export.append(dwa_trace)
 
             # Add visualisation
-            # step = self.x_axis.get_data() < int(self.num_lockin_steps*self.points_per_step)
-            step = np.arange(len(data_tot[0]))< int(self.num_lockin_steps*self.points_per_step)
+            step = self.x_axis.get_data() < self.lockin_step_duration*self.num_lockin_steps
+            # step = np.arange(len(data_tot[0])) < int(self.num_lockin_steps*self.points_per_step)
             data_trace = np.sign( np.sin( 2*np.pi*self.settings.child('lock_in', 'LI_PulseFreq').value() * self.x_axis.get_data()) ) * np.max( np.abs(data_tot) ) * step
             dwa_trace = DataFromPlugins(name='Trace', data=data_tot + [data_trace], dim='Data1D', labels=self.controller.activated_str+ ["Lock In Trace"], axes=[self.x_axis])
             data_to_export.append(dwa_trace)
@@ -283,8 +278,10 @@ class DAQ_1DViewer_Spectrum_Lockin(DAQ_1DViewer_Spectrum):
         self.num_lockin_steps = int(self.settings.child("timing", 'Range').value()*1e-3 / self.lockin_step_duration  /2)*2         #
         self.points_per_step = int( self.lockin_step_duration * round(self.settings.child("timing", "sampleRate").value() * 1e6) )
 
-        print(self.lockin_step_duration*1e3, 'ms', '-', self.num_lockin_steps, '-', self.points_per_step, '- (',   round(self.settings.child("timing", "sampleRate").value() * 1e6))
-
+        print("\n--- Lock In Info")
+        print("Lockin Step Duration = ", self.lockin_step_duration)
+        print("Number of Lockin Steps = ", self.num_lockin_steps)
+        print("Points Per Step = ", self.points_per_step)
 
 
 
