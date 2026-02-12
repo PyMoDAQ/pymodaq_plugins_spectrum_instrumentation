@@ -21,8 +21,8 @@ class Spectrum_Wrapper_Single:
         """
         self.card = None
         self.channels = None
-        self.duration = duration
-        self.sample_rate = sample_rate
+        self.duration = round(duration,5)
+        self.sample_rate = round(sample_rate,5)
         self.activated_str = []
         self.data_transfer=None
 
@@ -59,9 +59,9 @@ class Spectrum_Wrapper_Single:
         Num_Samples = int( (self.duration*1e-3) * (self.sample_rate*1e6) )                 # Total Number of Samples
         print("\n========== Initializing SPCM Card ========== " )
         print(" ----- Mode : Single")
-        print("Duration = ", round(self.duration,5), "ms")
+        print("Duration = ", self.duration, "ms")
         print("Number of Samples = ", Num_Samples)
-        print("Sampling Frequency = ", round(self.sample_rate,5), "MHz")
+        print("Sampling Frequency = ", self.sample_rate, "MHz")
         print(  "============================================" )
 
         try:
@@ -81,6 +81,9 @@ class Spectrum_Wrapper_Single:
 
             else : print("ERROR : Unknown Clock type")
 
+
+            print(self.sample_rate)
+            print(self.duration)
             clock.sample_rate(self.sample_rate * units.MHz, return_unit=units.MHz)
 
             # - DO THIS IN DAQ VIEWER
