@@ -189,7 +189,7 @@ class Spectrum_Wrapper_Single:
 
         all_data = []
         for channel in self.channels:
-            all_data.append( np.array(channel.convert_data(self.data_transfer.buffer[channel, :], units.V)) )
+            all_data.append( np.array(channel.convert_data(self.data_transfer.buffer[channel, :], units.V).magnitude) )
 
         return all_data
 

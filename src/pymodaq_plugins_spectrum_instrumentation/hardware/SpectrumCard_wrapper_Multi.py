@@ -212,7 +212,7 @@ class Spectrum_Wrapper_Multi(Spectrum_Wrapper_Single):
         all_data = []
         for channel in self.channels:
             segment=0
-            all_data.append( np.array(channel.convert_data(data[segment, :, channel], units.V).magnitude) )
+            all_data.append( np.array(channel.convert_data(data[segment, :, channel], units.V).magnitude) ) 
 
 
         return all_data
