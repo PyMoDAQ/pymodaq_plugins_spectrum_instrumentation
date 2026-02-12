@@ -81,9 +81,6 @@ class Spectrum_Wrapper_Single:
 
             else : print("ERROR : Unknown Clock type")
 
-
-            print(self.sample_rate)
-            print(self.duration)
             clock.sample_rate(self.sample_rate * units.MHz, return_unit=units.MHz)
 
             # - DO THIS IN DAQ VIEWER
