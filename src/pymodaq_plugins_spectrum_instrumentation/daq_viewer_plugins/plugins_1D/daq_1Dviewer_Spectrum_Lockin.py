@@ -119,8 +119,9 @@ class DAQ_1DViewer_Spectrum_Lockin(DAQ_1DViewer_Spectrum):
         self.x_axis = Axis(data=self.controller.get_the_x_axis(), label='Time', units="s", index=0)
         data_to_export = []
 
+
         # Integrated Trace, only one to always export
-        dwa_int = DataFromPlugins(name='Pulse train', data=[diff_data_int, sum_data_int], dim='Data1D', labels=['D', 'I'], do_plot=self.settings.child('lock_in', 'PlotSave', 'PulseTrain').value())
+        dwa_int = DataFromPlugins(name='Pulse train', data=[diff_data_int, sum_data_int], dim='Data1D', labels=['D', 'I'], do_plot=self.settings.child('lock_in', 'PlotSave', 'PulseTrain').value(), do_save=True)
         data_to_export.append(dwa_int)
 
         # Also deal with Trace separately as it is 1D
@@ -138,7 +139,7 @@ class DAQ_1DViewer_Spectrum_Lockin(DAQ_1DViewer_Spectrum):
 
         # Iterate through the calculated data "I_Ba"n "I_Bd"...
         export = {'I_Bd':I_Bd, 'I_Ba':I_Ba, 'D_Bd':D_Bd, 'D_Ba':D_Ba, 'ND_Bd':ND_Bd, 'ND_Ba':ND_Ba, 'phi_Bd':phi_Bd, 'phi_Ba':phi_Ba }
-        types = [ param.name() for param in self.settings.child('lock_in', 'PlotSave').children() if (param.value() and param.type()=="led_push" and param.name()!="Pulse train" and param.name()!="Trace") ]
+        types = [ param.name() for param in self.settings.child('lock_in', 'PlotSave').children() if (param.value() and param.type()=="led_push" and param.name()!="PulseTrain" and param.name()!="Trace") ]
         for type in types:
             dwa = DataFromPlugins(name=type, data=export[type], dim='Data0D', labels=[type])
             data_to_export.append(dwa)
